@@ -4,7 +4,7 @@ A Node.js Express API server that serves Yahoo Finance data using the yahoo-fina
 
 ## Features
 
-- Express API with rate limiting (100 requests per 15 minutes per IP)
+- Express API with configurable rate limiting and caching
 - Multi-ticker support for all endpoints
 - Docker multi-stage build
 - Health checks
@@ -119,10 +119,18 @@ The server will be available at http://localhost:3000.
 ## Environment Variables
 
 - `PORT`: Server port (default: 3000)
+- `RATE_LIMIT_WINDOW_MS`: Rate limit window in milliseconds (default: 900000, i.e., 15 minutes)
+- `RATE_LIMIT_MAX`: Maximum requests per window per IP (default: 100)
+- `CACHE_ENABLED`: Enable caching (default: true, set to 'false' to disable)
+- `CACHE_TTL`: Cache TTL in seconds (default: 300, i.e., 5 minutes)
 
 ## Rate Limiting
 
-Requests are limited to 100 per 15 minutes per IP address to prevent abuse.
+Requests are limited to prevent abuse. Defaults to 100 requests per 15 minutes per IP address. Configurable via `RATE_LIMIT_WINDOW_MS` and `RATE_LIMIT_MAX` environment variables.
+
+## Caching
+
+API responses are cached in memory to reduce external API calls. Defaults to 5 minutes TTL. Configurable via `CACHE_ENABLED` and `CACHE_TTL` environment variables.
 
 ## Error Handling
 
