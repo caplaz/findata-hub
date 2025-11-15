@@ -325,10 +325,10 @@ The server will be available at http://localhost:3000.
 
 ### GitHub Packages
 
-Pre-built Docker images are available on GitHub Packages:
+Pre-built Docker images are available on GitHub Packages for multiple architectures (AMD64, ARM64, ARMv7):
 
 ```bash
-# Pull the latest image
+# Pull the latest image (automatically selects your architecture)
 docker pull ghcr.io/acerbetti/yahoo-finance-server:latest
 
 # Or pull a specific version
@@ -337,6 +337,11 @@ docker pull ghcr.io/acerbetti/yahoo-finance-server:v1.0.0
 # Run the container
 docker run -p 3000:3000 ghcr.io/acerbetti/yahoo-finance-server:latest
 ```
+
+**Supported Platforms:**
+- `linux/amd64` (Intel/AMD 64-bit)
+- `linux/arm64` (ARM 64-bit, e.g., Apple Silicon, Raspberry Pi 4+)
+- `linux/arm/v7` (ARM 32-bit v7, e.g., Raspberry Pi 3 and older)
 
 ## Environment Variables
 

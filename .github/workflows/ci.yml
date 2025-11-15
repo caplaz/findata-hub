@@ -49,6 +49,12 @@ jobs:
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
 
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v3
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
             - name: Extract metadata
               id: meta
               uses: docker/metadata-action@v5
@@ -65,6 +71,7 @@ jobs:
               uses: docker/build-push-action@v5
               with:
                   context: .
+                  platforms: linux/amd64,linux/arm64,linux/arm/v7
                   push: true
                   tags: ${{ steps.meta.outputs.tags }}
                   labels: ${{ steps.meta.outputs.labels }}
@@ -81,16 +88,16 @@ jobs:
             - name: Extract changelog
               id: changelog
               run: |
-                # Extract changelog for current version
-                VERSION=$(echo ${{ github.ref_name }} | sed 's/^v//')
-                awk -v version="[$VERSION]" '
-                  $0 ~ version {found=1; print; next}
-                  found && /^## \[/ {exit}
-                  found {print}
-                ' CHANGELOG.md > changelog_body.md
-                echo "body<<EOF" >> $GITHUB_OUTPUT
-                cat changelog_body.md >> $GITHUB_OUTPUT
-                echo "EOF" >> $GITHUB_OUTPUT
+                  # Extract changelog for current version
+                  VERSION=$(echo ${{ github.ref_name }} | sed 's/^v//')
+                  awk -v version="[$VERSION]" '
+                    $0 ~ version {found=1; print; next}
+                    found && /^## \[/ {exit}
+                    found {print}
+                  ' CHANGELOG.md > changelog_body.md
+                  echo "body<<EOF" >> $GITHUB_OUTPUT
+                  cat changelog_body.md >> $GITHUB_OUTPUT
+                  echo "EOF" >> $GITHUB_OUTPUT
 
             - name: Create GitHub Release
               uses: softprops/action-gh-release@v1
