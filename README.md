@@ -19,6 +19,11 @@ Special thanks to the authors and maintainers of the [yahoo-finance2](https://gi
 - Proper error handling
 - Jest tests
 
+## Requirements
+
+- Node.js >= 22.0.0
+- npm or yarn
+
 ## Endpoints
 
 ### GET /health
@@ -339,6 +344,7 @@ docker run -p 3000:3000 ghcr.io/acerbetti/yahoo-finance-server:latest
 ```
 
 **Supported Platforms:**
+
 - `linux/amd64` (Intel/AMD 64-bit)
 - `linux/arm64` (ARM 64-bit, e.g., Apple Silicon, Raspberry Pi 4+)
 - `linux/arm/v7` (ARM 32-bit v7, e.g., Raspberry Pi 3 and older)

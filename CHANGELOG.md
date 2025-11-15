@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Technical Details
 
-- Node.js 20 with ES modules
+- Node.js 22 with ES modules
 - yahoo-finance2 v3 library for Yahoo Finance API integration
 - Express.js framework with middleware for rate limiting and caching
 - Docker containerization with multi-stage build
