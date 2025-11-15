@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-11-14
+
+### Added
+
+- **Search API** (`/search/:query`): Search for symbols, news, and financial data
+  - Returns quotes, news, research reports, and other search results
+  - Supports company names, symbols, and keywords
+- **Trending Symbols API** (`/trending/:region`): Get trending symbols by region
+  - Supports multiple regions (US, CA, UK, etc.)
+  - Returns currently trending stock symbols
+- **Stock Recommendations API** (`/recommendations/:symbol`): Get similar stock recommendations
+  - Returns recommended symbols similar to the input symbol
+  - Includes relevance scores for recommendations
+- **Stock Insights API** (`/insights/:symbol`): Comprehensive stock analysis and insights
+  - Company snapshots, analyst recommendations, events, and reports
+  - Detailed fundamental and technical analysis data
+- **Stock Screener API** (`/screener/:type`): Advanced stock screening capabilities
+  - Support for day_gainers, day_losers, most_actives, most_shorted
+  - Configurable result count with default of 25
+  - Uses modern screener API replacing deprecated methods
+
+### Enhanced
+
+- **API Documentation**: Comprehensive README updates with examples for all new endpoints
+- **Error Handling**: Consistent error handling across all new endpoints
+- **Caching**: All new endpoints support configurable caching
+- **Logging**: Detailed logging for all new API calls and responses
+
+### Technical Details
+
+- All new endpoints support multi-ticker requests where applicable
+- Consistent response formats across all APIs
+- Proper rate limiting and caching integration
+- Enhanced server startup logging showing all available endpoints
+
 ## [1.1.0] - 2025-11-14
 
 ### Added

@@ -388,7 +388,12 @@ app.get("/search/:query", async (req, res) => {
 
   try {
     const result = await yahooFinance.search(query);
-    log("debug", `Search completed for "${query}": ${result.quotes?.length || 0} quotes, ${result.news?.length || 0} news`);
+    log(
+      "debug",
+      `Search completed for "${query}": ${result.quotes?.length || 0} quotes, ${
+        result.news?.length || 0
+      } news`
+    );
 
     if (CACHE_ENABLED) {
       cache.set(cacheKey, result);
@@ -428,7 +433,10 @@ app.get("/trending/:region", async (req, res) => {
 
   try {
     const result = await yahooFinance.trendingSymbols(region);
-    log("debug", `Trending symbols for ${region}: ${result.quotes?.length || 0} symbols`);
+    log(
+      "debug",
+      `Trending symbols for ${region}: ${result.quotes?.length || 0} symbols`
+    );
 
     if (CACHE_ENABLED) {
       cache.set(cacheKey, result);
@@ -437,7 +445,11 @@ app.get("/trending/:region", async (req, res) => {
 
     res.json(result);
   } catch (err) {
-    log("error", `Trending symbols endpoint error for "${region}": ${err.message}`, err);
+    log(
+      "error",
+      `Trending symbols endpoint error for "${region}": ${err.message}`,
+      err
+    );
     res.status(500).json({ error: err.message });
   }
 });
@@ -468,7 +480,12 @@ app.get("/recommendations/:symbol", async (req, res) => {
 
   try {
     const result = await yahooFinance.recommendationsBySymbol(symbol);
-    log("debug", `Recommendations for ${symbol}: ${result.recommendedSymbols?.length || 0} symbols`);
+    log(
+      "debug",
+      `Recommendations for ${symbol}: ${
+        result.recommendedSymbols?.length || 0
+      } symbols`
+    );
 
     if (CACHE_ENABLED) {
       cache.set(cacheKey, result);
@@ -477,7 +494,11 @@ app.get("/recommendations/:symbol", async (req, res) => {
 
     res.json(result);
   } catch (err) {
-    log("error", `Recommendations endpoint error for "${symbol}": ${err.message}`, err);
+    log(
+      "error",
+      `Recommendations endpoint error for "${symbol}": ${err.message}`,
+      err
+    );
     res.status(500).json({ error: err.message });
   }
 });
@@ -517,7 +538,11 @@ app.get("/insights/:symbol", async (req, res) => {
 
     res.json(result);
   } catch (err) {
-    log("error", `Insights endpoint error for "${symbol}": ${err.message}`, err);
+    log(
+      "error",
+      `Insights endpoint error for "${symbol}": ${err.message}`,
+      err
+    );
     res.status(500).json({ error: err.message });
   }
 });
@@ -537,7 +562,10 @@ app.get("/screener/:type", async (req, res) => {
   const count = parseInt(req.query.count) || 25;
   const cacheKey = `screener:${type}:${count}`;
 
-  log("info", `Screener request for type: ${type}, count: ${count} from ${req.ip}`);
+  log(
+    "info",
+    `Screener request for type: ${type}, count: ${count} from ${req.ip}`
+  );
 
   if (CACHE_ENABLED) {
     const cached = cache.get(cacheKey);
@@ -568,7 +596,10 @@ app.get("/screener/:type", async (req, res) => {
     }
 
     const result = await yahooFinance.screener({ scrIds, count });
-    log("debug", `Screener results for ${type}: ${result.quotes?.length || 0} symbols`);
+    log(
+      "debug",
+      `Screener results for ${type}: ${result.quotes?.length || 0} symbols`
+    );
 
     if (CACHE_ENABLED) {
       cache.set(cacheKey, result);
@@ -609,9 +640,15 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     log("info", `   GET /info/:symbols - Company information`);
     log("info", `   GET /search/:query - Search symbols and news`);
     log("info", `   GET /trending/:region - Trending symbols by region`);
-    log("info", `   GET /recommendations/:symbol - Similar stock recommendations`);
+    log(
+      "info",
+      `   GET /recommendations/:symbol - Similar stock recommendations`
+    );
     log("info", `   GET /insights/:symbol - Comprehensive stock insights`);
-    log("info", `   GET /screener/:type - Stock screeners (gainers, losers, etc.)`);
+    log(
+      "info",
+      `   GET /screener/:type - Stock screeners (gainers, losers, etc.)`
+    );
   });
 }
 
