@@ -31,14 +31,6 @@ const CACHE_ENABLED = process.env.CACHE_ENABLED !== "false"; // default true
 const CACHE_TTL = parseInt(process.env.CACHE_TTL) || 300; // 5 minutes default
 const cache = new NodeCache({ stdTTL: CACHE_TTL });
 
-log("info", `Server starting with configuration:`, {
-  logLevel: LOG_LEVEL,
-  cacheEnabled: CACHE_ENABLED,
-  cacheTTL: CACHE_TTL,
-  rateLimitWindow: RATE_LIMIT_WINDOW_MS,
-  rateLimitMax: RATE_LIMIT_MAX,
-});
-
 // Rate limiting: configurable via env vars (defaults: 100 requests per 15 minutes per IP)
 const RATE_LIMIT_WINDOW_MS =
   parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000;
@@ -49,14 +41,20 @@ const limiter = rateLimit({
   message: "Too many requests from this IP, please try again later.",
   handler: (req, res) => {
     log("warn", `Rate limit exceeded for IP: ${req.ip}, URL: ${req.url}`);
-    res
-      .status(429)
-      .json({
-        error: "Too many requests from this IP, please try again later.",
-      });
+    res.status(429).json({
+      error: "Too many requests from this IP, please try again later.",
+    });
   },
 });
 app.use(limiter);
+
+log("info", `Server starting with configuration:`, {
+  logLevel: LOG_LEVEL,
+  cacheEnabled: CACHE_ENABLED,
+  cacheTTL: CACHE_TTL,
+  rateLimitWindow: RATE_LIMIT_WINDOW_MS,
+  rateLimitMax: RATE_LIMIT_MAX,
+});
 
 log(
   "info",
