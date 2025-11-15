@@ -323,6 +323,21 @@ docker-compose up --build
 
 The server will be available at http://localhost:3000.
 
+### GitHub Packages
+
+Pre-built Docker images are available on GitHub Packages:
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/acerbetti/yahoo-finance-server:latest
+
+# Or pull a specific version
+docker pull ghcr.io/acerbetti/yahoo-finance-server:v1.0.0
+
+# Run the container
+docker run -p 3000:3000 ghcr.io/acerbetti/yahoo-finance-server:latest
+```
+
 ## Environment Variables
 
 - `PORT`: Server port (default: 3000)
