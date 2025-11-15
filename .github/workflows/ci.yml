@@ -54,6 +54,10 @@ jobs:
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
+              with:
+                  driver-opts: |
+                      image=moby/buildkit:master
+                      network=host
 
             - name: Extract metadata
               id: meta
@@ -73,8 +77,20 @@ jobs:
                   context: .
                   platforms: linux/amd64,linux/arm64,linux/arm/v7
                   push: true
+                  provenance: false
+                  sbom: false
                   tags: ${{ steps.meta.outputs.tags }}
                   labels: ${{ steps.meta.outputs.labels }}
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
+                  annotations: |
+                      manifest:org.opencontainers.image.title=Yahoo Finance Server
+                      manifest:org.opencontainers.image.description=A Node.js Express API server for Yahoo Finance data
+                      manifest:org.opencontainers.image.vendor=acerbetti
+
+            - name: Inspect manifest
+              run: |
+                  docker buildx imagetools inspect ghcr.io/${{ github.repository }}:v1.0.0 || echo "Manifest inspection failed"
 
     release:
         needs: build-and-test
