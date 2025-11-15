@@ -361,6 +361,227 @@ app.get("/info/:symbols", async (req, res) => {
   }
 });
 
+// Search endpoint
+/**
+ * GET /search/:query
+ * Searches for symbols, news, and other financial data.
+ * @param {string} req.params.query - Search query (company name, symbol, etc.)
+ * @param {string} [req.query.type="all"] - Search type: quotes, news, research
+ * @returns {Object} Search results with quotes, news, and other data
+ * @example
+ * GET /search/apple -> {"quotes": [...], "news": [...], ...}
+ */
+app.get("/search/:query", async (req, res) => {
+  const query = req.params.query;
+  const cacheKey = `search:${query}`;
+
+  log("info", `Search request for "${query}" from ${req.ip}`);
+
+  if (CACHE_ENABLED) {
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      log("debug", `Cache hit for search: ${query}`);
+      return res.json(cached);
+    }
+    log("debug", `Cache miss for search: ${query}`);
+  }
+
+  try {
+    const result = await yahooFinance.search(query);
+    log("debug", `Search completed for "${query}": ${result.quotes?.length || 0} quotes, ${result.news?.length || 0} news`);
+
+    if (CACHE_ENABLED) {
+      cache.set(cacheKey, result);
+      log("debug", `Cached search results for ${query}`);
+    }
+
+    res.json(result);
+  } catch (err) {
+    log("error", `Search endpoint error for "${query}": ${err.message}`, err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Trending symbols endpoint
+/**
+ * GET /trending/:region
+ * Retrieves trending symbols for a specific region.
+ * @param {string} req.params.region - Region code (e.g., "US", "CA", "UK")
+ * @returns {Object} Trending symbols data
+ * @example
+ * GET /trending/US -> {"quotes": [...], "count": 5, ...}
+ */
+app.get("/trending/:region", async (req, res) => {
+  const region = req.params.region || "US";
+  const cacheKey = `trending:${region}`;
+
+  log("info", `Trending symbols request for region: ${region} from ${req.ip}`);
+
+  if (CACHE_ENABLED) {
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      log("debug", `Cache hit for trending: ${region}`);
+      return res.json(cached);
+    }
+    log("debug", `Cache miss for trending: ${region}`);
+  }
+
+  try {
+    const result = await yahooFinance.trendingSymbols(region);
+    log("debug", `Trending symbols for ${region}: ${result.quotes?.length || 0} symbols`);
+
+    if (CACHE_ENABLED) {
+      cache.set(cacheKey, result);
+      log("debug", `Cached trending symbols for ${region}`);
+    }
+
+    res.json(result);
+  } catch (err) {
+    log("error", `Trending symbols endpoint error for "${region}": ${err.message}`, err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Recommendations endpoint
+/**
+ * GET /recommendations/:symbol
+ * Retrieves recommended similar symbols for a given stock.
+ * @param {string} req.params.symbol - Stock symbol
+ * @returns {Object} Recommendation data with similar symbols
+ * @example
+ * GET /recommendations/AAPL -> {"symbol": "AAPL", "recommendedSymbols": [...]}
+ */
+app.get("/recommendations/:symbol", async (req, res) => {
+  const symbol = req.params.symbol.toUpperCase();
+  const cacheKey = `recommendations:${symbol}`;
+
+  log("info", `Recommendations request for symbol: ${symbol} from ${req.ip}`);
+
+  if (CACHE_ENABLED) {
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      log("debug", `Cache hit for recommendations: ${symbol}`);
+      return res.json(cached);
+    }
+    log("debug", `Cache miss for recommendations: ${symbol}`);
+  }
+
+  try {
+    const result = await yahooFinance.recommendationsBySymbol(symbol);
+    log("debug", `Recommendations for ${symbol}: ${result.recommendedSymbols?.length || 0} symbols`);
+
+    if (CACHE_ENABLED) {
+      cache.set(cacheKey, result);
+      log("debug", `Cached recommendations for ${symbol}`);
+    }
+
+    res.json(result);
+  } catch (err) {
+    log("error", `Recommendations endpoint error for "${symbol}": ${err.message}`, err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Insights endpoint
+/**
+ * GET /insights/:symbol
+ * Retrieves comprehensive insights and analysis for a symbol.
+ * @param {string} req.params.symbol - Stock symbol
+ * @returns {Object} Insights data including company snapshot, recommendations, events, etc.
+ * @example
+ * GET /insights/AAPL -> {"symbol": "AAPL", "companySnapshot": {...}, "recommendation": {...}, ...}
+ */
+app.get("/insights/:symbol", async (req, res) => {
+  const symbol = req.params.symbol.toUpperCase();
+  const cacheKey = `insights:${symbol}`;
+
+  log("info", `Insights request for symbol: ${symbol} from ${req.ip}`);
+
+  if (CACHE_ENABLED) {
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      log("debug", `Cache hit for insights: ${symbol}`);
+      return res.json(cached);
+    }
+    log("debug", `Cache miss for insights: ${symbol}`);
+  }
+
+  try {
+    const result = await yahooFinance.insights(symbol);
+    log("debug", `Insights retrieved for ${symbol}`);
+
+    if (CACHE_ENABLED) {
+      cache.set(cacheKey, result);
+      log("debug", `Cached insights for ${symbol}`);
+    }
+
+    res.json(result);
+  } catch (err) {
+    log("error", `Insights endpoint error for "${symbol}": ${err.message}`, err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Screener endpoint
+/**
+ * GET /screener/:type
+ * Retrieves stock screener results for different categories.
+ * @param {string} req.params.type - Screener type (day_gainers, day_losers, most_actives, etc.)
+ * @param {number} [req.query.count=25] - Number of results to return
+ * @returns {Object} Screener results with quotes
+ * @example
+ * GET /screener/day_gainers -> {"quotes": [...], "total": 100, ...}
+ */
+app.get("/screener/:type", async (req, res) => {
+  const type = req.params.type;
+  const count = parseInt(req.query.count) || 25;
+  const cacheKey = `screener:${type}:${count}`;
+
+  log("info", `Screener request for type: ${type}, count: ${count} from ${req.ip}`);
+
+  if (CACHE_ENABLED) {
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      log("debug", `Cache hit for screener: ${type}`);
+      return res.json(cached);
+    }
+    log("debug", `Cache miss for screener: ${type}`);
+  }
+
+  try {
+    let scrIds;
+    switch (type) {
+      case "day_gainers":
+        scrIds = "day_gainers";
+        break;
+      case "day_losers":
+        scrIds = "day_losers";
+        break;
+      case "most_actives":
+        scrIds = "most_actives";
+        break;
+      case "most_shorted":
+        scrIds = "most_shorted_stocks";
+        break;
+      default:
+        scrIds = type; // Allow custom screener IDs
+    }
+
+    const result = await yahooFinance.screener({ scrIds, count });
+    log("debug", `Screener results for ${type}: ${result.quotes?.length || 0} symbols`);
+
+    if (CACHE_ENABLED) {
+      cache.set(cacheKey, result);
+      log("debug", `Cached screener results for ${type}`);
+    }
+
+    res.json(result);
+  } catch (err) {
+    log("error", `Screener endpoint error for "${type}": ${err.message}`, err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   log(
@@ -386,6 +607,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     log("info", `   GET /quote/:symbols - Stock quotes`);
     log("info", `   GET /history/:symbols - Historical data`);
     log("info", `   GET /info/:symbols - Company information`);
+    log("info", `   GET /search/:query - Search symbols and news`);
+    log("info", `   GET /trending/:region - Trending symbols by region`);
+    log("info", `   GET /recommendations/:symbol - Similar stock recommendations`);
+    log("info", `   GET /insights/:symbol - Comprehensive stock insights`);
+    log("info", `   GET /screener/:type - Stock screeners (gainers, losers, etc.)`);
   });
 }
 

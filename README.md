@@ -296,6 +296,190 @@ curl http://localhost:3000/info/MSFT
 curl http://localhost:3000/info/AAPL,GOOGL
 ```
 
+### GET /search/:query
+
+Search for symbols, news, and financial data.
+
+**Parameters:**
+
+- `query`: Search term (company name, symbol, etc.)
+
+**Response:** Search results with quotes, news, and other data.
+
+```json
+{
+  "quotes": [
+    {
+      "exchange": "NMS",
+      "shortname": "Apple Inc.",
+      "quoteType": "EQUITY",
+      "symbol": "AAPL",
+      "index": "quotes",
+      "score": 1111111.0,
+      "typeDisp": "Equity",
+      "longname": "Apple Inc.",
+      "isYahooFinance": true
+    }
+  ],
+  "news": [
+    {
+      "uuid": "12345678-1234-1234-1234-123456789012",
+      "title": "Apple Inc. (AAPL) Stock Price, News, Quote & History",
+      "publisher": "Yahoo Finance",
+      "link": "https://finance.yahoo.com/quote/AAPL/",
+      "providerPublishTime": 1731600000,
+      "type": "STORY"
+    }
+  ],
+  "count": 1
+}
+```
+
+**Example:**
+
+```bash
+curl "http://localhost:3000/search/apple"
+```
+
+### GET /trending/:region
+
+Get trending symbols for a specific region.
+
+**Parameters:**
+
+- `region`: Region code (US, CA, UK, etc.)
+
+**Response:** Trending symbols data.
+
+```json
+{
+  "count": 5,
+  "quotes": [
+    {
+      "symbol": "AAPL"
+    },
+    {
+      "symbol": "TSLA"
+    }
+  ],
+  "jobTimestamp": 1731600000000,
+  "startInterval": 1731596400000
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:3000/trending/US
+curl http://localhost:3000/trending/CA
+```
+
+### GET /recommendations/:symbol
+
+Get recommended similar stocks for a given symbol.
+
+**Parameters:**
+
+- `symbol`: Stock symbol
+
+**Response:** Recommendation data with similar symbols.
+
+```json
+{
+  "symbol": "AAPL",
+  "recommendedSymbols": [
+    {
+      "symbol": "MSFT",
+      "score": 0.9999
+    },
+    {
+      "symbol": "GOOGL",
+      "score": 0.9998
+    }
+  ]
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:3000/recommendations/AAPL
+```
+
+### GET /insights/:symbol
+
+Get comprehensive insights and analysis for a symbol.
+
+**Parameters:**
+
+- `symbol`: Stock symbol
+
+**Response:** Detailed insights including company snapshot, recommendations, events, and reports.
+
+```json
+{
+  "symbol": "AAPL",
+  "companySnapshot": {
+    "sectorInfo": "Technology",
+    "company": {
+      "innovativeness": 9.5,
+      "hiring": 8.2,
+      "sustainability": 9.1,
+      "insiderSentiments": 7.8,
+      "earningsReports": 8.9,
+      "dividends": 6.5
+    }
+  },
+  "recommendation": {
+    "targetPrice": 250.0,
+    "provider": "Yahoo",
+    "rating": "BUY"
+  }
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:3000/insights/AAPL
+```
+
+### GET /screener/:type
+
+Get stock screener results for different categories.
+
+**Parameters:**
+
+- `type`: Screener type (`day_gainers`, `day_losers`, `most_actives`, `most_shorted`)
+- `count` (optional): Number of results (default: 25)
+
+**Response:** Screener results with stock quotes.
+
+```json
+{
+  "id": "day_gainers",
+  "title": "Day Gainers",
+  "description": "Stocks ordered in descending order by price percent change greater than 3% with respect to the previous close",
+  "canonicalName": "DAY_GAINERS",
+  "count": 25,
+  "total": 100,
+  "quotes": [
+    {
+      "symbol": "EXAMPLE",
+      "regularMarketPrice": 100.0,
+      "regularMarketChangePercent": 15.5
+    }
+  ]
+}
+```
+
+**Example:**
+
+```bash
+curl "http://localhost:3000/screener/day_gainers"
+curl "http://localhost:3000/screener/most_actives?count=50"
+```
+
 ## Setup
 
 ### Local Development
