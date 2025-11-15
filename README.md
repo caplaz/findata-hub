@@ -41,6 +41,19 @@ Get current stock prices. Supports multiple symbols separated by commas.
 
 **Response:** Array of quote objects or null for invalid symbols.
 
+```json
+[
+  {
+    "symbol": "AAPL",
+    "regularMarketPrice": 150.25,
+    "currency": "USD",
+    "regularMarketChange": 2.15,
+    "regularMarketChangePercent": 1.45
+  },
+  null
+]
+```
+
 **Example:**
 
 ```bash
@@ -60,6 +73,29 @@ Get historical price data. Supports multiple symbols.
 
 **Response:** Array of historical data arrays or null for failures.
 
+```json
+[
+  [
+    {
+      "date": "2023-01-01",
+      "open": 145.0,
+      "high": 150.0,
+      "low": 144.0,
+      "close": 149.5,
+      "volume": 50000000
+    },
+    {
+      "date": "2023-01-02",
+      "open": 149.5,
+      "high": 152.0,
+      "low": 148.0,
+      "close": 151.0,
+      "volume": 48000000
+    }
+  ]
+]
+```
+
 **Example:**
 
 ```bash
@@ -76,6 +112,22 @@ Get company information. Supports multiple symbols.
 - `symbols`: Stock symbols
 
 **Response:** Array of info objects or null for failures.
+
+```json
+[
+  {
+    "assetProfile": {
+      "longBusinessSummary": "Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide.",
+      "industry": "Consumer Electronics",
+      "sector": "Technology"
+    },
+    "summaryProfile": {
+      "website": "https://www.apple.com",
+      "phone": "408-996-1010"
+    }
+  }
+]
+```
 
 **Example:**
 
