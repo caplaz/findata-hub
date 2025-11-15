@@ -352,6 +352,7 @@ docker run -p 3000:3000 ghcr.io/acerbetti/yahoo-finance-server:latest
 ## Environment Variables
 
 - `PORT`: Server port (default: 3000)
+- `LOG_LEVEL`: Logging verbosity level - `error`, `warn`, `info`, `debug` (default: `info`)
 - `RATE_LIMIT_WINDOW_MS`: Rate limit window in milliseconds (default: 900000, i.e., 15 minutes)
 - `RATE_LIMIT_MAX`: Maximum requests per window per IP (default: 100)
 - `CACHE_ENABLED`: Enable caching (default: true, set to 'false' to disable)
