@@ -1,3 +1,4 @@
-const yahooFinance = require("yahoo-finance2");
+import YahooFinance from "yahoo-finance2";
 
-module.exports = yahooFinance;
+const yahooFinance = new YahooFinance();
+export default yahooFinance;

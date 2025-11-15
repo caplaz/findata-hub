@@ -5,10 +5,10 @@
  * @module server
  */
 
-const express = require("express");
-const rateLimit = require("express-rate-limit");
-const yahooFinance = require("./yahoo");
-const NodeCache = require("node-cache");
+import express from "express";
+import rateLimit from "express-rate-limit";
+import yahooFinance from "./yahoo.js";
+import NodeCache from "node-cache";
 
 const app = express();
 app.use(express.json());
@@ -47,8 +47,8 @@ app.get("/health", (req, res) => {
  * @param {string} req.params.symbols - Comma-separated list of stock symbols (e.g., "AAPL,GOOGL")
  * @returns {Array<Object|null>} Array of quote objects or null for invalid symbols
  * @example
- * GET /quote/AAPL -> [{"symbol": "AAPL", "regularMarketPrice": 150.25, ...}]
- * GET /quote/AAPL,INVALID -> [{"symbol": "AAPL", ...}, null]
+ * GET /quote/AAPL -> [{"price": {"regularMarketPrice": 150.25, ...}}]
+ * GET /quote/AAPL,INVALID -> [{"price": {...}}, null]
  */
 app.get("/quote/:symbols", async (req, res) => {
   const symbols = req.params.symbols;
@@ -62,7 +62,22 @@ app.get("/quote/:symbols", async (req, res) => {
   }
 
   try {
-    const data = await yahooFinance.quote(symbols.split(","));
+    const symbolList = symbols.split(",");
+    const promises = symbolList.map((symbol) =>
+      yahooFinance.quoteSummary(symbol.trim())
+    );
+    const results = await Promise.allSettled(promises);
+
+    const data = {};
+    results.forEach((result, index) => {
+      const symbol = symbolList[index].trim();
+      if (result.status === "fulfilled") {
+        data[symbol] = result.value;
+      } else {
+        data[symbol] = { error: result.reason.message };
+      }
+    });
+
     if (CACHE_ENABLED) {
       cache.set(cacheKey, data);
     }
@@ -97,12 +112,57 @@ app.get("/history/:symbols", async (req, res) => {
   }
 
   try {
-    const promises = symbols
-      .split(",")
-      .map((symbol) => yahooFinance.historical(symbol, { period, interval }));
+    // Convert period to period1/period2 for chart API
+    const now = new Date();
+    let period1;
+    switch (period) {
+      case "1d":
+        period1 = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case "5d":
+        period1 = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
+        break;
+      case "1mo":
+        period1 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case "3mo":
+        period1 = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case "6mo":
+        period1 = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+        break;
+      case "1y":
+        period1 = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      case "2y":
+        period1 = new Date(now.getTime() - 2 * 365 * 24 * 60 * 60 * 1000);
+        break;
+      case "5y":
+        period1 = new Date(now.getTime() - 5 * 365 * 24 * 60 * 60 * 1000);
+        break;
+      case "10y":
+        period1 = new Date(now.getTime() - 10 * 365 * 24 * 60 * 60 * 1000);
+        break;
+      case "ytd":
+        period1 = new Date(now.getFullYear(), 0, 1);
+        break;
+      case "max":
+        period1 = new Date(1970, 0, 1);
+        break;
+      default:
+        period1 = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); // default to 1y
+    }
+
+    const promises = symbols.split(",").map((symbol) =>
+      yahooFinance.chart(symbol, {
+        period1: Math.floor(period1.getTime() / 1000),
+        period2: Math.floor(now.getTime() / 1000),
+        interval,
+      })
+    );
     const results = await Promise.allSettled(promises);
     const data = results.map((result) =>
-      result.status === "fulfilled" ? result.value : null
+      result.status === "fulfilled" ? result.value.quotes : null
     );
     if (CACHE_ENABLED) {
       cache.set(cacheKey, data);
@@ -166,10 +226,10 @@ app.use((req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
 }
 
-module.exports = app;
+export default app;

@@ -1,6 +1,6 @@
 # Yahoo Finance Server
 
-A Node.js Express API server that serves Yahoo Finance data using the yahoo-finance2 library. Supports multiple tickers in a single request with arrays as results, including partial failure handling.
+A Node.js Express API server that serves Yahoo Finance data using the yahoo-finance2 v3.0.0 library. Supports multiple tickers in a single request with arrays as results, including partial failure handling.
 
 ## Features
 
