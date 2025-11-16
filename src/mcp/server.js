@@ -675,11 +675,11 @@ async function handleGetFinancialStatement(
   try {
     log("debug", `MCP: Fetching ${period} ${statementType} for ${symbol}`);
 
-    // Use quoteSummary with appropriate module
+    // Map statement type to fundamentalsTimeSeries module
     const moduleMap = {
-      income: "incomeStatementHistory",
-      balance: "balanceSheetHistory",
-      cashflow: "cashflowStatementHistory",
+      income: "financials",
+      balance: "balance-sheet",
+      cashflow: "cash-flow",
     };
 
     const moduleName = moduleMap[statementType];
@@ -689,12 +689,41 @@ async function handleGetFinancialStatement(
       );
     }
 
-    const result = await yahooFinance.quoteSummary(symbol, {
-      modules: [moduleName],
-    });
+    // Calculate date range based on period
+    const endDate = new Date();
+    const startDate = new Date();
+    if (period === "annual") {
+      startDate.setFullYear(endDate.getFullYear() - 10); // Last 10 years
+    } else {
+      startDate.setMonth(endDate.getMonth() - 40); // Last 40 quarters (10 years)
+    }
 
-    const moduleData = result[moduleName];
-    if (!moduleData) {
+    let result = [];
+    try {
+      result = await yahooFinance.fundamentalsTimeSeries(symbol, {
+        period1: startDate.toISOString().split("T")[0],
+        period2: endDate.toISOString().split("T")[0],
+        type: period,
+        module: moduleName,
+      });
+    } catch (apiError) {
+      log("error", `fundamentalsTimeSeries API error: ${apiError.message}`);
+      // Try with a simpler call
+      try {
+        result = await yahooFinance.fundamentalsTimeSeries(symbol, {
+          period1: "2020-01-01",
+          period2: "2024-12-31",
+          type: "annual",
+          module: moduleName,
+        });
+        log("info", `Fallback call succeeded with ${result.length} items`);
+      } catch (fallbackError) {
+        log("error", `Fallback call also failed: ${fallbackError.message}`);
+        throw apiError; // Re-throw original error
+      }
+    }
+
+    if (!result || result.length === 0) {
       return {
         symbol,
         type: statementType,
@@ -707,50 +736,54 @@ async function handleGetFinancialStatement(
     }
 
     // Extract statements based on type
-    let statements = [];
+    const statements = result
+      .slice(0, 5)
+      .map((item) => {
+        const formatted = {
+          endDate: item.date,
+        };
 
-    if (statementType === "income" && moduleData.incomeStatementHistory) {
-      statements = moduleData.incomeStatementHistory.slice(0, 5) || [];
-    } else if (statementType === "balance" && moduleData.balanceSheetHistory) {
-      statements = moduleData.balanceSheetHistory.slice(0, 5) || [];
-    } else if (statementType === "cashflow" && moduleData.cashflowStatements) {
-      statements = moduleData.cashflowStatements.slice(0, 5) || [];
-    }
+        // Add statement-specific fields
+        if (statementType === "income") {
+          formatted.totalRevenue = item.totalRevenue;
+          formatted.costOfRevenue = item.costOfRevenue;
+          formatted.grossProfit = item.grossProfit;
+          formatted.operatingIncome = item.operatingIncome;
+          formatted.netIncome = item.netIncome;
+        } else if (statementType === "balance") {
+          formatted.totalAssets = item.totalAssets;
+          formatted.totalLiabilities = item.totalLiabilitiesNetMinorityInterest;
+          formatted.totalEquity =
+            item.totalStockholderEquity || item.commonStockEquity;
+          formatted.currentAssets = item.currentAssets;
+          formatted.currentLiabilities = item.currentLiabilities;
+        } else if (statementType === "cashflow") {
+          formatted.operatingCashFlow = item.operatingCashFlow;
+          formatted.investingCashFlow = item.investingCashFlow;
+          formatted.financingCashFlow = item.financingCashFlow;
+          formatted.freeCashFlow =
+            (item.operatingCashFlow || 0) - (item.capitalExpenditure || 0);
+        }
+
+        return formatted;
+      })
+      .filter((stmt) => {
+        // Filter out statements that don't have meaningful financial data
+        if (statementType === "income")
+          return stmt.totalRevenue || stmt.netIncome;
+        if (statementType === "balance")
+          return stmt.totalAssets || stmt.totalLiabilities;
+        if (statementType === "cashflow")
+          return stmt.operatingCashFlow !== undefined;
+        return true;
+      });
 
     return {
       symbol,
       type: statementType,
       period,
       count: statements.length,
-      statements: statements.map((stmt) => {
-        const formatted = {
-          endDate: stmt.endDate?.fmt || stmt.date?.fmt,
-        };
-
-        // Add statement-specific fields
-        if (statementType === "income") {
-          formatted.totalRevenue = stmt.totalRevenue?.raw;
-          formatted.costOfRevenue = stmt.costOfRevenue?.raw;
-          formatted.grossProfit = stmt.grossProfit?.raw;
-          formatted.operatingIncome = stmt.operatingIncome?.raw;
-          formatted.netIncome = stmt.netIncome?.raw;
-        } else if (statementType === "balance") {
-          formatted.totalAssets = stmt.totalAssets?.raw;
-          formatted.totalLiabilities = stmt.totalLiab?.raw;
-          formatted.totalEquity = stmt.totalStockholderEquity?.raw;
-          formatted.currentAssets = stmt.currentAssets?.raw;
-          formatted.currentLiabilities = stmt.currentLiabilities?.raw;
-        } else if (statementType === "cashflow") {
-          formatted.operatingCashFlow = stmt.operatingCashFlow?.raw;
-          formatted.investingCashFlow = stmt.investingCashFlow?.raw;
-          formatted.financingCashFlow = stmt.financingCashFlow?.raw;
-          formatted.freeFlow =
-            (stmt.operatingCashFlow?.raw || 0) -
-            (stmt.capitalExpenditures?.raw || 0);
-        }
-
-        return formatted;
-      }),
+      statements,
       timestamp: new Date().toISOString(),
     };
   } catch (error) {
