@@ -372,7 +372,7 @@ router.get("/info/:symbols", async (req, res) => {
     log("debug", `Fetching company info for ${symbolList.length} symbols`);
     const promises = symbolList.map((symbol) =>
       yahooFinance.quoteSummary(symbol, {
-        modules: ["assetProfile", "summaryProfile"],
+        modules: ["assetProfile"],
       })
     );
     const results = await Promise.allSettled(promises);

@@ -499,24 +499,6 @@ Get company information. Supports multiple symbols.
       "governanceEpochDate": "2025-11-01T00:00:00.000Z",
       "compensationAsOfEpochDate": "2024-12-31T00:00:00.000Z",
       "irWebsite": "http://investor.apple.com/"
-    },
-    "summaryProfile": {
-      "address1": "One Apple Park Way",
-      "city": "Cupertino",
-      "state": "CA",
-      "zip": "95014",
-      "country": "United States",
-      "phone": "(408) 996-1010",
-      "website": "https://www.apple.com",
-      "industry": "Consumer Electronics",
-      "industryKey": "consumer-electronics",
-      "industryDisp": "Consumer Electronics",
-      "sector": "Technology",
-      "sectorKey": "technology",
-      "sectorDisp": "Technology",
-      "longBusinessSummary": "Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide...",
-      "fullTimeEmployees": 166000,
-      "irWebsite": "http://investor.apple.com/"
     }
   }
 ]

@@ -422,7 +422,6 @@ async function handleGetCompanyInfo(symbols) {
         const info = await yahooFinance.quoteSummary(symbol, {
           modules: [
             "assetProfile",
-            "summaryProfile",
             "recommendationTrend",
             "financialData",
           ],
