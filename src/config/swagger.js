@@ -14,7 +14,7 @@ const swaggerOptions = {
     openapi: "3.0.0",
     info: {
       title: "Yahoo Finance API Server",
-      version: "1.2.1",
+      version: "1.3.0",
       description:
         "A comprehensive REST API for Yahoo Finance data with multi-ticker support, caching, and rate limiting",
       contact: {

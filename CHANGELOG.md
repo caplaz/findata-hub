@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-11-15
+
+### Added
+
+- **Financial Statements Endpoint**: New `GET /financial/:symbol/:type` endpoint for accessing financial data
+
+  - Support for income statements, balance sheets, and cash flow statements
+  - Period parameter for annual and quarterly data retrieval
+  - Comprehensive financial metrics including revenue, assets, liabilities, and cash flows
+
+- **News and Market Context Endpoint**: New `GET /news/:symbol` endpoint for company information
+
+  - Company profile data (sector, industry, website, description)
+  - Market context and news summary
+  - Count parameter for flexible data retrieval
+
+- **MCP Tool Implementations**: Two new financial data tools for LLM integration
+
+  - `get_financial_statement`: Retrieve financial statements via MCP protocol
+  - `get_stock_news`: Access company context and market information via MCP
+  - Full SSE streaming support for both tools
+
+- **Comprehensive Test Coverage**: 49 new tests added
+
+  - 31 new API endpoint tests (financial and news routes)
+  - 60 comprehensive MCP server tests
+  - Total test suite: 115 tests across 7 test suites
+  - Full error handling and edge case coverage
+
+- **Enhanced Documentation**
+  - Complete MCP.md with detailed tool documentation and examples
+  - Updated README with financial and news endpoint specifications
+  - Curl examples and client integration guides for all new endpoints
+  - MCP tool schemas and usage patterns
+  - Integration examples for Claude and other LLM systems
+
+### Changed
+
+- **Startup Logging**: Updated server startup messages to display all 11 REST endpoints and 4 MCP endpoints
+- **Project Description**: Enhanced README to prominently feature MCP integration for LLM systems
+- **Documentation Structure**: Refactored to reduce repetition by linking comprehensive details to MCP.md
+
+### Technical Details
+
+- All 115 tests passing across 7 test suites
+- Zero breaking changes - fully backward compatible
+- New endpoints follow existing API patterns and conventions
+- Complete error handling for financial data retrieval failures
+
 ## [1.2.1] - 2025-11-14
 
 ### Added
