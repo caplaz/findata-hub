@@ -811,4 +811,283 @@ router.get("/screener/:type", async (req, res) => {
   }
 });
 
+// ============================================================================
+// Financial Statement Endpoint
+// ============================================================================
+
+/**
+ * @swagger
+ * /financial/{symbol}/{type}:
+ *   get:
+ *     summary: Get financial statements
+ *     description: Retrieve financial statements including income statement, balance sheet, or cash flow statement
+ *     tags: [Financial]
+ *     parameters:
+ *       - name: symbol
+ *         in: path
+ *         required: true
+ *         description: Stock ticker symbol
+ *         schema:
+ *           type: string
+ *           example: AAPL
+ *       - name: type
+ *         in: path
+ *         required: true
+ *         description: Statement type (income, balance, cashflow)
+ *         schema:
+ *           type: string
+ *           enum: [income, balance, cashflow]
+ *       - name: period
+ *         in: query
+ *         description: Statement period (annual or quarterly)
+ *         schema:
+ *           type: string
+ *           enum: [annual, quarterly]
+ *           default: annual
+ *     responses:
+ *       200:
+ *         description: Financial statement data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 symbol:
+ *                   type: string
+ *                 type:
+ *                   type: string
+ *                 period:
+ *                   type: string
+ *                 count:
+ *                   type: number
+ *                 statements:
+ *                   type: array
+ *       400:
+ *         description: Invalid parameters
+ *       500:
+ *         description: Server error
+ */
+router.get("/financial/:symbol/:type", async (req, res) => {
+  const symbol = req.params.symbol.toUpperCase();
+  const type = req.params.type.toLowerCase();
+  const period = (req.query.period || "annual").toLowerCase();
+  const cacheKey = `financial:${symbol}:${type}:${period}`;
+
+  log(
+    "info",
+    `Financial statement request for ${symbol} (${type}/${period}) from ${req.ip}`
+  );
+
+  // Validate statement type
+  if (!["income", "balance", "cashflow"].includes(type)) {
+    return res.status(400).json({
+      error: `Invalid statement type: ${type}. Must be 'income', 'balance', or 'cashflow'`,
+    });
+  }
+
+  // Validate period
+  if (!["annual", "quarterly"].includes(period)) {
+    return res.status(400).json({
+      error: `Invalid period: ${period}. Must be 'annual' or 'quarterly'`,
+    });
+  }
+
+  if (CACHE_ENABLED) {
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      log("debug", `Cache hit for financial statement: ${symbol}/${type}`);
+      return res.json(cached);
+    }
+  }
+
+  try {
+    // Map statement type to module name
+    const moduleMap = {
+      income: "incomeStatementHistory",
+      balance: "balanceSheetHistory",
+      cashflow: "cashflowStatementHistory",
+    };
+
+    const moduleName = moduleMap[type];
+    const result = await yahooFinance.quoteSummary(symbol, {
+      modules: [moduleName],
+    });
+
+    const moduleData = result[moduleName];
+    if (!moduleData) {
+      return res.status(404).json({
+        error: `No ${type} statement data available for ${symbol}`,
+      });
+    }
+
+    // Extract statements based on type
+    let statements = [];
+
+    if (type === "income" && moduleData.incomeStatementHistory) {
+      statements = moduleData.incomeStatementHistory.slice(0, 10) || [];
+    } else if (type === "balance" && moduleData.balanceSheetStatements) {
+      statements = moduleData.balanceSheetStatements.slice(0, 10) || [];
+    } else if (type === "cashflow" && moduleData.cashflowStatements) {
+      statements = moduleData.cashflowStatements.slice(0, 10) || [];
+    }
+
+    const response = {
+      symbol,
+      type,
+      period,
+      count: statements.length,
+      statements: statements.map((stmt) => {
+        const formatted = {
+          endDate: stmt.endDate,
+        };
+
+        // Add statement-specific fields - values are raw numbers, not objects
+        if (type === "income") {
+          formatted.totalRevenue = stmt.totalRevenue;
+          formatted.costOfRevenue = stmt.costOfRevenue;
+          formatted.grossProfit = stmt.grossProfit;
+          formatted.operatingIncome = stmt.operatingIncome;
+          formatted.netIncome = stmt.netIncome;
+          formatted.dilutedEPS = stmt.dilutedEPS;
+        } else if (type === "balance") {
+          formatted.totalAssets = stmt.totalAssets;
+          formatted.totalLiabilities = stmt.totalLiab;
+          formatted.totalEquity = stmt.totalStockholderEquity;
+          formatted.currentAssets = stmt.currentAssets;
+          formatted.currentLiabilities = stmt.currentLiabilities;
+          formatted.cash = stmt.cash;
+        } else if (type === "cashflow") {
+          formatted.operatingCashFlow = stmt.operatingCashFlow;
+          formatted.investingCashFlow = stmt.investingCashFlow;
+          formatted.financingCashFlow = stmt.financingCashFlow;
+          formatted.freeFlow =
+            (stmt.operatingCashFlow || 0) - (stmt.capitalExpenditures || 0);
+        }
+
+        return formatted;
+      }),
+    };
+
+    if (CACHE_ENABLED) {
+      cache.set(cacheKey, response);
+      log("debug", `Cached financial statement for ${symbol}/${type}`);
+    }
+
+    res.json(response);
+  } catch (err) {
+    log(
+      "error",
+      `Financial statement endpoint error for "${symbol}" (${type}): ${err.message}`,
+      err
+    );
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================================================
+// Stock News Endpoint
+// ============================================================================
+
+/**
+ * @swagger
+ * /news/{symbol}:
+ *   get:
+ *     summary: Get latest news and market context
+ *     description: Retrieve news articles and company information for a stock symbol
+ *     tags: [News]
+ *     parameters:
+ *       - name: symbol
+ *         in: path
+ *         required: true
+ *         description: Stock ticker symbol
+ *         schema:
+ *           type: string
+ *           example: AAPL
+ *       - name: count
+ *         in: query
+ *         description: Number of articles to return
+ *         schema:
+ *           type: number
+ *           default: 10
+ *           minimum: 1
+ *           maximum: 50
+ *     responses:
+ *       200:
+ *         description: News and market context data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 symbol:
+ *                   type: string
+ *                 count:
+ *                   type: number
+ *                 news:
+ *                   type: array
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Invalid parameters
+ *       500:
+ *         description: Server error
+ */
+router.get("/news/:symbol", async (req, res) => {
+  const symbol = req.params.symbol.toUpperCase();
+  const count = Math.min(parseInt(req.query.count) || 10, 50);
+  const cacheKey = `news:${symbol}:${count}`;
+
+  log("info", `News request for ${symbol} (count: ${count}) from ${req.ip}`);
+
+  if (CACHE_ENABLED) {
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      log("debug", `Cache hit for news: ${symbol}`);
+      return res.json(cached);
+    }
+  }
+
+  try {
+    // Get company info and asset profile which provides context
+    const info = await yahooFinance.quoteSummary(symbol, {
+      modules: ["assetProfile", "summaryProfile"],
+    });
+
+    const response = {
+      symbol,
+      count: 0,
+      news: [],
+      companyInfo: {
+        longName: info.assetProfile?.longName,
+        sector: info.assetProfile?.sector,
+        industry: info.assetProfile?.industry,
+        website: info.assetProfile?.website,
+        description: info.assetProfile?.longBusinessSummary,
+      },
+      summaryInfo: {
+        previousClose: info.summaryProfile?.previousClose?.raw,
+        marketCap: info.summaryProfile?.marketCap?.raw,
+        trailingPE: info.summaryProfile?.trailingPE?.raw,
+        forwardPE: info.summaryProfile?.forwardPE?.raw,
+      },
+      message:
+        "Live news streaming is available through Yahoo Finance web interface. Use this endpoint for company context and market information.",
+      dataAvailable: {
+        hasAssetProfile: !!info.assetProfile,
+        hasSummaryProfile: !!info.summaryProfile,
+      },
+    };
+
+    if (CACHE_ENABLED) {
+      cache.set(cacheKey, response);
+      log("debug", `Cached news context for ${symbol}`);
+    }
+
+    res.json(response);
+  } catch (err) {
+    log("error", `News endpoint error for "${symbol}": ${err.message}`, err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

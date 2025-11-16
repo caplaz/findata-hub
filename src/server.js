@@ -8,6 +8,7 @@
  * - Rate limiting per IP address
  * - Comprehensive API logging with configurable levels
  * - Swagger/OpenAPI interactive documentation
+ * - MCP (Model Context Protocol) support with HTTP + SSE streaming
  * - Error handling and health checks
  *
  * @module server
@@ -17,6 +18,7 @@ import express from "express";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 import routes from "./routes/index.js";
+import mcpRouter from "./mcp/server.js";
 import { limiter, logRateLimitConfig } from "./middleware/index.js";
 import { swaggerOptions } from "./config/swagger.js";
 import { log } from "./utils/logger.js";
@@ -72,6 +74,12 @@ app.get("/", (req, res) => {
  * Mount all API routes under root path
  */
 app.use(routes);
+
+/**
+ * Mount MCP routes for LLM integration
+ * Provides tool discovery and execution with SSE streaming
+ */
+app.use("/mcp", mcpRouter);
 
 // ============================================================================
 // Error Handling & 404
@@ -135,7 +143,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         `💡 For container environments, set SWAGGER_SERVER_URL (e.g., http://host.docker.internal:3000)`
       );
     }
-    log("info", `💰 API endpoints:`);
+    log("info", `💰 Finance API endpoints:`);
     log("info", `   GET /health - Health check`);
     log("info", `   GET /quote/:symbols - Stock quotes`);
     log("info", `   GET /history/:symbols - Historical data`);
@@ -151,6 +159,16 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       "info",
       `   GET /screener/:type - Stock screeners (gainers, losers, etc.)`
     );
+    log(
+      "info",
+      `   GET /financial/:symbol/:type - Financial statements (income, balance, cashflow)`
+    );
+    log("info", `   GET /news/:symbol - Company news and market context`);
+    log("info", `\n🤖 MCP (Model Context Protocol) Endpoints:`);
+    log("info", `   GET /mcp/health - MCP server health & tools info`);
+    log("info", `   GET /mcp/tools - List all available MCP tools`);
+    log("info", `   POST /mcp/call - Execute tool (JSON response)`);
+    log("info", `   POST /mcp/call-stream - Execute tool (SSE streaming)`);
   });
 }
 

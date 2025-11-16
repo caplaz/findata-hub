@@ -1,6 +1,6 @@
 # Yahoo Finance Server
 
-A Node.js Express API server that serves Yahoo Finance data using the yahoo-finance2 v3.0.0 library. Supports multiple tickers in a single request with arrays as results, including partial failure handling.
+A comprehensive Node.js Express API server that serves Yahoo Finance data using the yahoo-finance2 v3.0.0 library. Features 11 REST endpoints for financial data, 11 MCP (Model Context Protocol) tools for LLM integration, and supports multiple tickers in a single request with arrays as results and partial failure handling.
 
 ## ⚠️ Disclaimer
 
@@ -12,12 +12,15 @@ Special thanks to the authors and maintainers of the [yahoo-finance2](https://gi
 
 ## Features
 
-- Express API with configurable rate limiting and caching
-- Multi-ticker support for all endpoints
-- Docker multi-stage build
-- Health checks
-- Proper error handling
-- Jest tests with comprehensive coverage
+- **11 REST API Endpoints** for stock quotes, history, company info, search, trending, recommendations, insights, screeners, performance analysis, financial statements, and news
+- **11 MCP Tools** (Model Context Protocol) for LLM integration via HTTP + SSE streaming - see [MCP.md](./MCP.md) for detailed documentation
+- Multi-ticker support for all endpoints with partial failure handling
+- Response caching with configurable TTL
+- Rate limiting per IP address
+- Comprehensive API logging with configurable levels (`error`, `warn`, `info`, `debug`)
+- Docker multi-stage build with multi-architecture support (AMD64, ARM64, ARMv7)
+- Health checks and proper error handling
+- Jest tests with comprehensive coverage (115 tests across 7 test suites)
 - **Interactive API Documentation** at `/api-docs` (Swagger UI)
 - **OpenAPI JSON Specification** at `/api-docs.json`
 - **Modular architecture** with separated concerns
@@ -679,6 +682,179 @@ Get stock screener results for different categories.
 curl "http://localhost:3000/screener/day_gainers"
 curl "http://localhost:3000/screener/most_actives?count=50"
 ```
+
+### GET /financial/:symbol/:type
+
+Get financial statements for a stock.
+
+**Parameters:**
+
+- `symbol`: Stock ticker symbol (e.g., AAPL)
+- `type`: Statement type (`income`, `balance`, `cashflow`)
+- `period` (optional): Statement period (`annual`, `quarterly`) - default: annual
+
+**Response:** Financial statement data with historical periods.
+
+```json
+{
+  "symbol": "AAPL",
+  "type": "income",
+  "period": "annual",
+  "count": 4,
+  "statements": [
+    {
+      "endDate": "2025-09-30T00:00:00.000Z",
+      "totalRevenue": 416161000000,
+      "costOfRevenue": 0,
+      "grossProfit": 0,
+      "operatingIncome": null,
+      "netIncome": 112010000000
+    }
+  ]
+}
+```
+
+**Supported Statement Types:**
+
+- `income` - Income statement with revenue, costs, net income
+- `balance` - Balance sheet with assets, liabilities, equity
+- `cashflow` - Cash flow statement with operating, investing, financing flows
+
+**Example:**
+
+```bash
+# Annual income statement
+curl "http://localhost:3000/financial/AAPL/income"
+
+# Quarterly balance sheet
+curl "http://localhost:3000/financial/MSFT/balance?period=quarterly"
+
+# Annual cash flow
+curl "http://localhost:3000/financial/GOOGL/cashflow"
+```
+
+### GET /news/:symbol
+
+Get company news and market context information.
+
+**Parameters:**
+
+- `symbol`: Stock ticker symbol (e.g., AAPL)
+- `count` (optional): Number of articles to retrieve (default: 10, max: 50)
+
+**Response:** Company information and market context.
+
+```json
+{
+  "symbol": "AAPL",
+  "count": 0,
+  "news": [],
+  "companyInfo": {
+    "sector": "Technology",
+    "industry": "Consumer Electronics",
+    "website": "https://www.apple.com",
+    "description": "Apple Inc. designs, manufactures, and markets..."
+  },
+  "message": "Live news streaming is available through Yahoo Finance web interface...",
+  "dataAvailable": {
+    "hasAssetProfile": true,
+    "hasSummaryProfile": true
+  }
+}
+```
+
+**Example:**
+
+```bash
+# Get company context for AAPL
+curl "http://localhost:3000/news/AAPL"
+
+# Get company context for MSFT with count
+curl "http://localhost:3000/news/MSFT?count=5"
+```
+
+## MCP (Model Context Protocol) Integration
+
+The server includes a comprehensive MCP implementation with **11 financial data tools** accessible via HTTP endpoints and Server-Sent Events (SSE) streaming. This enables seamless integration with LLM systems like Claude for intelligent financial analysis and data retrieval.
+
+**Quick Start:**
+
+- **MCP Health**: `GET /mcp/health`
+- **List Tools**: `GET /mcp/tools`
+- **Execute Tool**: `POST /mcp/call`
+- **Stream Results**: `POST /mcp/call-stream`
+
+For comprehensive MCP documentation, tool descriptions, usage examples, and integration guides, see [MCP.md](./MCP.md).
+
+## Setup
+
+### Local Development
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Run in development mode:
+
+```bash
+npm run dev
+```
+
+3. Run tests:
+
+```bash
+npm test
+```
+
+### Docker
+
+1. Build and run with Docker Compose:
+
+```bash
+docker-compose up --build
+```
+
+The server will be available at http://localhost:3000.
+
+### GitHub Packages
+
+Pre-built Docker images are available on GitHub Packages for multiple architectures (AMD64, ARM64, ARMv7):
+
+```bash
+# Pull the latest image (automatically selects your architecture)
+docker pull ghcr.io/acerbetti/yahoo-finance-server:latest
+
+# Or pull a specific version
+docker pull ghcr.io/acerbetti/yahoo-finance-server:v1.0.0
+
+# Run the container
+docker run -p 3000:3000 ghcr.io/acerbetti/yahoo-finance-server:latest
+```
+
+**Supported Platforms:**
+
+- `linux/amd64` (Intel/AMD 64-bit)
+- `linux/arm64` (ARM 64-bit, e.g., Apple Silicon, Raspberry Pi 4+)
+- `linux/arm/v7` (ARM 32-bit v7, e.g., Raspberry Pi 3 and older)
+
+## Environment Variables
+
+- `PORT`: Server port (default: 3000)
+- `LOG_LEVEL`: Logging verbosity level - `error`, `warn`, `info`, `debug` (default: `info`)
+- `RATE_LIMIT_WINDOW_MS`: Rate limit window in milliseconds (default: 900000, i.e., 15 minutes)
+- `RATE_LIMIT_MAX`: Maximum requests per window per IP (default: 100)
+- `CACHE_ENABLED`: Enable caching (default: true, set to 'false' to disable)
+- `CACHE_TTL`: Cache TTL in seconds (default: 300, i.e., 5 minutes)
+
+## Rate Limiting
+
+Requests are limited to prevent abuse. Defaults to 100 requests per 15 minutes per IP address. Configurable via `RATE_LIMIT_WINDOW_MS` and `RATE_LIMIT_MAX` environment variables.
+
+## Caching
+
+Responses are cached to improve performance. Cache is enabled by default with a 5-minute TTL. Configure via `CACHE_ENABLED` and `CACHE_TTL` environment variables.
 
 ## Setup
 
