@@ -21,6 +21,7 @@ Special thanks to the authors and maintainers of the [yahoo-finance2](https://gi
 
 - **11 REST API Endpoints** for stock quotes, history, company info, search, trending, recommendations, insights, screeners, performance analysis, financial statements, and news
 - **11 MCP Tools** (Model Context Protocol) for LLM integration via HTTP + SSE streaming - see [MCP.md](./MCP.md) for detailed documentation
+- **CORS Support** - Cross-origin resource sharing enabled for web applications
 - Multi-ticker support for all endpoints with partial failure handling
 - Response caching with configurable TTL
 - Rate limiting per IP address
@@ -233,6 +234,28 @@ SWAGGER_SERVER_URL=http://host.docker.internal:3000 npm start
 # Run in Docker container (Linux)
 SWAGGER_SERVER_URL=http://172.17.0.1:3000 npm start
 ```
+
+## CORS (Cross-Origin Resource Sharing)
+
+The API server includes CORS support to allow cross-origin requests from web applications. CORS is configured to allow requests from **any origin**, enabling integration with web applications hosted on different domains.
+
+**CORS Configuration:**
+
+- **Allowed Origins**: `*` (all origins)
+- **Allowed Methods**: `GET, POST, PUT, DELETE, OPTIONS`
+- **Allowed Headers**: `Content-Type, Authorization, X-Requested-With`
+- **Credentials**: Supported
+
+**Example CORS Headers in Response:**
+
+```
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With
+Access-Control-Allow-Credentials: true
+```
+
+This allows web applications (like finance.caplaz.com) to make direct API calls to the Yahoo Finance Server without proxy requirements.
 
 ## Endpoints
 

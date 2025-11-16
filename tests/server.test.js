@@ -114,3 +114,50 @@ describe("/info/:symbols", () => {
     expect(res.body).toEqual([null]);
   });
 });
+
+describe("CORS Configuration", () => {
+  it("should include CORS headers in responses", async () => {
+    const origin = "https://example.com";
+    const res = await request(app)
+      .options("/health")
+      .set("Origin", origin)
+      .set("Access-Control-Request-Method", "GET");
+
+    expect(res.status).toBe(204); // OPTIONS requests typically return 204
+    expect(res.headers["access-control-allow-origin"]).toBe(origin);
+    expect(res.headers["access-control-allow-methods"]).toContain("GET");
+    expect(res.headers["access-control-allow-methods"]).toContain("POST");
+    expect(res.headers["access-control-allow-methods"]).toContain("OPTIONS");
+    expect(res.headers["access-control-allow-headers"]).toContain(
+      "Content-Type"
+    );
+    expect(res.headers["access-control-allow-credentials"]).toBe("true");
+  });
+
+  it("should allow requests from any origin", async () => {
+    const origin = "https://finance.caplaz.com";
+    const res = await request(app).get("/health").set("Origin", origin);
+
+    expect(res.status).toBe(200);
+    expect(res.headers["access-control-allow-origin"]).toBe(origin);
+  });
+
+  it("should handle preflight requests correctly", async () => {
+    const origin = "http://localhost:3000";
+    const res = await request(app)
+      .options("/quote/AAPL")
+      .set("Origin", origin)
+      .set("Access-Control-Request-Method", "GET")
+      .set("Access-Control-Request-Headers", "Content-Type, Authorization");
+
+    expect(res.status).toBe(204); // OPTIONS requests typically return 204
+    expect(res.headers["access-control-allow-origin"]).toBe(origin);
+    expect(res.headers["access-control-allow-methods"]).toContain("GET");
+    expect(res.headers["access-control-allow-headers"]).toContain(
+      "Content-Type"
+    );
+    expect(res.headers["access-control-allow-headers"]).toContain(
+      "Authorization"
+    );
+  });
+});
