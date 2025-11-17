@@ -8,6 +8,7 @@ import { Router } from "express";
 import yahooFinance from "../yahoo.js";
 import { cache, CACHE_ENABLED } from "../config/cache.js";
 import { log } from "../utils/logger.js";
+import newsReaderRouter from "./newsReader.js";
 
 const router = Router();
 
@@ -1151,5 +1152,8 @@ router.get("/news/:symbol", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// Use news reader routes
+router.use("/", newsReaderRouter);
 
 export default router;
