@@ -19,8 +19,8 @@ Special thanks to the authors and maintainers of the [yahoo-finance2](https://gi
 
 ## Features
 
-- **11 REST API Endpoints** for stock quotes, history, company info, search, trending, recommendations, insights, screeners, performance analysis, financial statements, and news
-- **11 MCP Tools** (Model Context Protocol) for LLM integration via HTTP + SSE streaming - see [MCP.md](./MCP.md) for detailed documentation
+- **12 REST API Endpoints** for stock quotes, history, company info, search, trending, recommendations, insights, screeners, performance analysis, financial statements, news, and article content extraction
+- **12 MCP Tools** (Model Context Protocol) for LLM integration via HTTP + SSE streaming - see [MCP.md](./MCP.md) for detailed documentation
 - **CORS Support** - Cross-origin resource sharing enabled for web applications
 - Multi-ticker support for all endpoints with partial failure handling
 - Response caching with configurable TTL
@@ -28,7 +28,7 @@ Special thanks to the authors and maintainers of the [yahoo-finance2](https://gi
 - Comprehensive API logging with configurable levels (`error`, `warn`, `info`, `debug`)
 - Docker multi-stage build with multi-architecture support (AMD64, ARM64, ARMv7)
 - Health checks and proper error handling
-- Jest tests with comprehensive coverage (115 tests across 7 test suites)
+- Jest tests with comprehensive coverage (122 tests across 8 test suites)
 - **Interactive API Documentation** at `/api-docs` (Swagger UI)
 - **OpenAPI JSON Specification** at `/api-docs.json`
 - **Modular architecture** with separated concerns
@@ -41,7 +41,8 @@ The codebase is organized into logical modules for better maintainability:
 src/
 ├── server.js                 # Main Express application entry point
 ├── routes/
-│   └── index.js             # All API endpoint handlers with Swagger docs
+│   ├── index.js             # All API endpoint handlers with Swagger docs
+│   └── newsReader.js        # News article content extraction endpoint
 ├── config/
 │   ├── swagger.js           # OpenAPI/Swagger configuration
 │   └── cache.js             # Cache configuration and instance
@@ -783,6 +784,31 @@ curl "http://localhost:3000/news/AAPL"
 
 # Get company context for MSFT with count
 curl "http://localhost:3000/news/MSFT?count=5"
+```
+
+### GET /news_reader/:slug
+
+Extract article title and content from Yahoo Finance news articles.
+
+**Parameters:**
+
+- `slug`: Article slug from Yahoo Finance URL (e.g., `bitcoin-price-under-pressure-slips-below-92000-as-self-fulfilling-prophecy-puts-4-year-cycle-in-focus-203113535.html`)
+
+**Response:** Article title, content, and source URL.
+
+```json
+{
+  "title": "Bitcoin Price Under Pressure, Slips Below $92,000 as Self-Fulfilling Prophecy Puts 4-Year Cycle in Focus",
+  "content": "Bitcoin (BTC-USD) remained under pressure on Monday, falling below $92,000 and bringing its losses from record highs in October to more than 26%. The drop is prompting questions about whether this remains a temporary correction or the beginning of another four-year cycle that led to a longer-term sell-off.\n\nThe token has declined sharply since $19 billion in leveraged positions were liquidated last month...",
+  "url": "https://finance.yahoo.com/news/bitcoin-price-under-pressure-slips-below-92000-as-self-fulfilling-prophecy-puts-4-year-cycle-in-focus-203113535.html"
+}
+```
+
+**Example:**
+
+```bash
+# Extract content from a Bitcoin article
+curl "http://localhost:3000/news_reader/bitcoin-price-under-pressure-slips-below-92000-as-self-fulfilling-prophecy-puts-4-year-cycle-in-focus-203113535.html"
 ```
 
 ## MCP (Model Context Protocol) Integration

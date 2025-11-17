@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-11-17
+
+### Added
+
+- **News Reader API**: New endpoint for extracting article content from Yahoo Finance news
+
+  - **New Endpoint**: `GET /news_reader/{slug}` - Extract title and content from Yahoo Finance articles
+  - **Robust Scraping**: HTML parsing with cheerio using multiple CSS selectors for reliable content extraction
+  - **Header Overflow Fix**: Resolved "Parse Error: Header overflow" by implementing native Node.js https module with 128KB header limit
+  - **Performance**: Response caching and rate limiting integration
+  - **Documentation**: Complete Swagger/OpenAPI specification for the new endpoint
+  - **Testing**: Comprehensive test suite with Jest covering success and error scenarios
+
+### Technical Details
+
+- Added cheerio (^1.1.2) and axios (^1.13.2) dependencies for HTML scraping
+- Native Node.js https module implementation to handle Yahoo Finance's large response headers
+- Integrated with existing caching, rate limiting, and error handling infrastructure
+- All tests pass (122/122) including 2 new news reader test cases
+- Backward compatible - no breaking changes to existing API endpoints
+
 ## [1.3.3] - 2025-11-16
 
 ### Changed
