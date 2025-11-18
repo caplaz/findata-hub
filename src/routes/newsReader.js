@@ -15,6 +15,189 @@ import { log } from "../utils/logger.js";
 const router = Router();
 
 // ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Fetch article content from a URL with redirect handling
+ * @param {string} articleUrl - The URL to fetch
+ * @param {number} redirectCount - Number of redirects followed (to prevent infinite loops)
+ * @returns {Promise<{data: string, status: number, headers: object, finalUrl: string}>}
+ */
+async function fetchArticleContent(articleUrl, redirectCount = 0) {
+  // Prevent infinite redirect loops
+  if (redirectCount > 5) {
+    throw new Error('Too many redirects');
+  }
+
+  log("debug", `Fetching article content from ${articleUrl} (redirect count: ${redirectCount})`);
+
+  const urlObj = new URL(articleUrl);
+  const options = {
+    hostname: urlObj.hostname,
+    path: urlObj.pathname + urlObj.search,
+    method: "GET",
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    },
+    timeout: 10000,
+    maxHeaderSize: 131072, // 128KB header limit
+  };
+
+  return new Promise((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => {
+        data += chunk;
+      });
+      res.on("end", () => {
+        resolve({
+          data,
+          status: res.statusCode,
+          headers: res.headers,
+          finalUrl: articleUrl
+        });
+      });
+    });
+
+    req.on("error", (err) => {
+      reject(err);
+    });
+
+    req.end();
+  });
+}
+
+/**
+ * Extract article content from HTML
+ * @param {string} html - The HTML content
+ * @param {string} url - The source URL
+ * @returns {object} - Extracted article data
+ */
+function extractArticleContent(html, url) {
+  const $ = cheerioLoad(html);
+
+  // Debug: log the title tag and some content
+  log("debug", `HTML title tag: ${$("title").text()}`);
+  log("debug", `H1 tags found: ${$("h1").length}`);
+  log("debug", `H1.caas-title found: ${$("h1.caas-title").length}`);
+
+  // Extract title - try JSON data first (for /m/ URLs), then HTML selectors
+  let title = "";
+
+  // First, try to extract title from JSON data in script tags (for /m/ URLs)
+  const scriptTags = $('script[type="application/json"]');
+  log("debug", `Found ${scriptTags.length} JSON script tags`);
+
+  for (let i = 0; i < scriptTags.length; i++) {
+    try {
+      const scriptContent = $(scriptTags[i]).html();
+      if (scriptContent && scriptContent.includes("storyAtoms")) {
+        const jsonData = JSON.parse(scriptContent);
+        // Try to extract title from JSON data
+        if (jsonData.headline || jsonData.title) {
+          title = jsonData.headline || jsonData.title;
+          log("debug", `Title extracted from JSON: "${title}"`);
+          break;
+        }
+      }
+    } catch (e) {
+      log("debug", `Failed to parse JSON script tag ${i}: ${e.message}`);
+    }
+  }
+
+  // Fallback: try HTML selectors if title not found in JSON
+  if (!title) {
+    title = $("h1").first().text().trim();
+    if (!title) {
+      title = $("h1.caas-title").text().trim();
+    }
+    if (!title) {
+      title = $("title").text().trim();
+    }
+  }
+
+  log("debug", `Final extracted title: "${title}"`);
+
+  // Extract main content - try multiple selectors and JSON data
+  let content = "";
+
+  // First, try to extract from JSON data in script tags (for /m/ URLs)
+  for (let i = 0; i < scriptTags.length; i++) {
+    try {
+      const scriptContent = $(scriptTags[i]).html();
+      if (scriptContent && scriptContent.includes("storyAtoms")) {
+        const jsonData = JSON.parse(scriptContent);
+        if (
+          jsonData.body &&
+          jsonData.body.items &&
+          jsonData.body.items[0] &&
+          jsonData.body.items[0].data &&
+          jsonData.body.items[0].data.storyAtoms
+        ) {
+          const storyAtoms = jsonData.body.items[0].data.storyAtoms;
+          const textAtoms = storyAtoms.filter((atom) => atom.type === "text");
+          content = textAtoms.map((atom) => atom.content).join("\n\n");
+          log(
+            "debug",
+            `Content extracted from JSON: ${content.substring(0, 100)}...`
+          );
+          if (content) break;
+        }
+      }
+    } catch (e) {
+      log("debug", `Failed to parse JSON script tag ${i}: ${e.message}`);
+    }
+  }
+
+  // Fallback: try the main article body selectors (for /news/ URLs)
+  if (!content) {
+    const bodySelectors = [
+      "div.caas-body",
+      'div[data-testid="article-body"]',
+      "div.article-body",
+      "div.content",
+      "article",
+    ];
+
+    for (const selector of bodySelectors) {
+      const element = $(selector);
+      log(
+        "debug",
+        `Trying selector "${selector}": found ${element.length} elements`
+      );
+      if (element.length > 0) {
+        // Get all paragraphs within the body
+        const paragraphs = element
+          .find("p")
+          .map((i, el) => $(el).text().trim())
+          .get();
+        content = paragraphs.join("\n\n");
+        log(
+          "debug",
+          `Content from selector "${selector}": ${content.substring(
+            0,
+            100
+          )}...`
+        );
+        if (content) break;
+      }
+    }
+  }
+
+  // Fallback: get all paragraphs if no specific body found
+  if (!content) {
+    const allParagraphs = $("p")
+      .map((i, el) => $(el).text().trim())
+      .get();
+    content = allParagraphs.slice(0, 20).join("\n\n"); // Limit to first 20 paragraphs
+  }
+
+  return { title, content };
+}
+
+// ============================================================================
 // News Reader Endpoint
 // ============================================================================
 
@@ -98,39 +281,25 @@ router.get("/news_reader/*", async (req, res) => {
   }
 
   try {
-    log("debug", `Fetching article content from ${url}`);
+    // Fetch article content with redirect handling
+    let response = await fetchArticleContent(url);
+    let redirectCount = 0;
+    let finalUrl = url;
 
-    // Fetch the HTML content using native https module
-    const response = await new Promise((resolve, reject) => {
-      const urlObj = new URL(url);
-      const options = {
-        hostname: urlObj.hostname,
-        path: urlObj.pathname,
-        method: "GET",
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        },
-        timeout: 10000,
-        maxHeaderSize: 131072, // 128KB header limit
-      };
+    // Handle redirects
+    while ((response.status === 301 || response.status === 302) && redirectCount < 5) {
+      const location = response.headers.location;
+      if (!location) {
+        throw new Error(`Redirect response missing Location header`);
+      }
 
-      const req = https.request(options, (res) => {
-        let data = "";
-        res.on("data", (chunk) => {
-          data += chunk;
-        });
-        res.on("end", () => {
-          resolve({ data, status: res.statusCode });
-        });
-      });
+      // Handle relative URLs
+      const redirectUrl = location.startsWith('http') ? location : `https://finance.yahoo.com${location}`;
+      log("info", `Following redirect from ${finalUrl} to ${redirectUrl}`);
 
-      req.on("error", (err) => {
-        reject(err);
-      });
-
-      req.end();
-    });
+      finalUrl = redirectUrl;
+      response = await fetchArticleContent(finalUrl, ++redirectCount);
+    }
 
     if (response.status !== 200) {
       if (response.status === 404) {
@@ -142,126 +311,11 @@ router.get("/news_reader/*", async (req, res) => {
       }
     }
 
-    const $ = cheerioLoad(response.data);
-
-    // Debug: log the title tag and some content
-    log("debug", `HTML title tag: ${$("title").text()}`);
-    log("debug", `H1 tags found: ${$("h1").length}`);
-    log("debug", `H1.caas-title found: ${$("h1.caas-title").length}`);
-
-    // Extract title - try JSON data first (for /m/ URLs), then HTML selectors
-    let title = "";
-
-    // First, try to extract title from JSON data in script tags (for /m/ URLs)
-    const scriptTags = $('script[type="application/json"]');
-    log("debug", `Found ${scriptTags.length} JSON script tags`);
-
-    for (let i = 0; i < scriptTags.length; i++) {
-      try {
-        const scriptContent = $(scriptTags[i]).html();
-        if (scriptContent && scriptContent.includes("storyAtoms")) {
-          const jsonData = JSON.parse(scriptContent);
-          // Try to extract title from JSON data
-          if (jsonData.headline || jsonData.title) {
-            title = jsonData.headline || jsonData.title;
-            log("debug", `Title extracted from JSON: "${title}"`);
-            break;
-          }
-        }
-      } catch (e) {
-        log("debug", `Failed to parse JSON script tag ${i}: ${e.message}`);
-      }
-    }
-
-    // Fallback: try HTML selectors if title not found in JSON
-    if (!title) {
-      title = $("h1").first().text().trim();
-      if (!title) {
-        title = $("h1.caas-title").text().trim();
-      }
-      if (!title) {
-        title = $("title").text().trim();
-      }
-    }
-
-    log("debug", `Final extracted title: "${title}"`);
-
-    // Extract main content - try multiple selectors and JSON data
-    let content = "";
-
-    // First, try to extract from JSON data in script tags (for /m/ URLs)
-    for (let i = 0; i < scriptTags.length; i++) {
-      try {
-        const scriptContent = $(scriptTags[i]).html();
-        if (scriptContent && scriptContent.includes("storyAtoms")) {
-          const jsonData = JSON.parse(scriptContent);
-          if (
-            jsonData.body &&
-            jsonData.body.items &&
-            jsonData.body.items[0] &&
-            jsonData.body.items[0].data &&
-            jsonData.body.items[0].data.storyAtoms
-          ) {
-            const storyAtoms = jsonData.body.items[0].data.storyAtoms;
-            const textAtoms = storyAtoms.filter((atom) => atom.type === "text");
-            content = textAtoms.map((atom) => atom.content).join("\n\n");
-            log(
-              "debug",
-              `Content extracted from JSON: ${content.substring(0, 100)}...`
-            );
-            if (content) break;
-          }
-        }
-      } catch (e) {
-        log("debug", `Failed to parse JSON script tag ${i}: ${e.message}`);
-      }
-    }
-
-    // Fallback: try the main article body selectors (for /news/ URLs)
-    if (!content) {
-      const bodySelectors = [
-        "div.caas-body",
-        'div[data-testid="article-body"]',
-        "div.article-body",
-        "div.content",
-        "article",
-      ];
-
-      for (const selector of bodySelectors) {
-        const element = $(selector);
-        log(
-          "debug",
-          `Trying selector "${selector}": found ${element.length} elements`
-        );
-        if (element.length > 0) {
-          // Get all paragraphs within the body
-          const paragraphs = element
-            .find("p")
-            .map((i, el) => $(el).text().trim())
-            .get();
-          content = paragraphs.join("\n\n");
-          log(
-            "debug",
-            `Content from selector "${selector}": ${content.substring(
-              0,
-              100
-            )}...`
-          );
-          if (content) break;
-        }
-      }
-    }
-
-    // Fallback: get all paragraphs if no specific body found
-    if (!content) {
-      const allParagraphs = $("p")
-        .map((i, el) => $(el).text().trim())
-        .get();
-      content = allParagraphs.slice(0, 20).join("\n\n"); // Limit to first 20 paragraphs
-    }
+    // Extract article content
+    const { title, content } = extractArticleContent(response.data, finalUrl);
 
     if (!title || !content) {
-      log("warn", `Unable to extract content from ${url}`);
+      log("warn", `Unable to extract content from ${finalUrl}`);
       return res.status(404).json({
         error:
           "Unable to extract article content. The article may not exist or the page structure has changed.",
@@ -271,12 +325,18 @@ router.get("/news_reader/*", async (req, res) => {
     const result = {
       title,
       content,
-      url,
+      url: finalUrl,
     };
 
     if (CACHE_ENABLED) {
       cache.set(cacheKey, result);
-      log("debug", `Cached article content for ${url}`);
+      log("debug", `Cached article content for ${finalUrl}`);
+      // Also cache under final URL if it was redirected
+      if (finalUrl !== url) {
+        const finalCacheKey = `news_reader:${finalUrl}`;
+        cache.set(finalCacheKey, result);
+        log("debug", `Also cached under final URL: ${finalUrl}`);
+      }
     }
 
     res.json(result);
