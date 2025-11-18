@@ -27,10 +27,13 @@ const router = Router();
 async function fetchArticleContent(articleUrl, redirectCount = 0) {
   // Prevent infinite redirect loops
   if (redirectCount > 5) {
-    throw new Error('Too many redirects');
+    throw new Error("Too many redirects");
   }
 
-  log("debug", `Fetching article content from ${articleUrl} (redirect count: ${redirectCount})`);
+  log(
+    "debug",
+    `Fetching article content from ${articleUrl} (redirect count: ${redirectCount})`
+  );
 
   const urlObj = new URL(articleUrl);
   const options = {
@@ -56,7 +59,7 @@ async function fetchArticleContent(articleUrl, redirectCount = 0) {
           data,
           status: res.statusCode,
           headers: res.headers,
-          finalUrl: articleUrl
+          finalUrl: articleUrl,
         });
       });
     });
@@ -176,10 +179,7 @@ function extractArticleContent(html, url) {
         content = paragraphs.join("\n\n");
         log(
           "debug",
-          `Content from selector "${selector}": ${content.substring(
-            0,
-            100
-          )}...`
+          `Content from selector "${selector}": ${content.substring(0, 100)}...`
         );
         if (content) break;
       }
@@ -287,14 +287,19 @@ router.get("/news_reader/*", async (req, res) => {
     let finalUrl = url;
 
     // Handle redirects
-    while ((response.status === 301 || response.status === 302) && redirectCount < 5) {
+    while (
+      (response.status === 301 || response.status === 302) &&
+      redirectCount < 5
+    ) {
       const location = response.headers.location;
       if (!location) {
         throw new Error(`Redirect response missing Location header`);
       }
 
       // Handle relative URLs
-      const redirectUrl = location.startsWith('http') ? location : `https://finance.yahoo.com${location}`;
+      const redirectUrl = location.startsWith("http")
+        ? location
+        : `https://finance.yahoo.com${location}`;
       log("info", `Following redirect from ${finalUrl} to ${redirectUrl}`);
 
       finalUrl = redirectUrl;

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.2] - 2025-11-17
+
+### Fixed
+
+- **News Reader Redirect Handling**: Fixed 301/302 redirect errors when Yahoo Finance moves articles
+
+  - **Automatic Redirect Following**: Endpoint now automatically follows HTTP redirects up to 5 levels deep
+  - **Location Header Processing**: Properly extracts and follows Location headers from redirect responses
+  - **URL Resolution**: Handles both absolute and relative redirect URLs correctly
+  - **Loop Prevention**: Implements redirect counter to prevent infinite redirect loops
+  - **Cache Optimization**: Updates caching logic to work with final redirected URLs
+  - **Error Handling**: Improved error messages for redirect-related failures
+
+### Technical Details
+
+- Added `fetchArticleContent()` helper function with redirect handling logic
+- Refactored article extraction into separate `extractArticleContent()` function
+- Enhanced HTTP request handling with proper redirect loop prevention
+- All tests pass (127/127) including existing redirect scenarios
+- Backward compatible - no breaking changes to API responses
+
 ## [1.4.1] - 2025-11-17
 
 ### Enhanced
