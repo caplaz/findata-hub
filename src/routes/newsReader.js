@@ -256,7 +256,7 @@ function extractArticleContent(html, url) {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get("/news_reader/*", async (req, res) => {
+router.get("/*", async (req, res) => {
   const url = req.params[0];
 
   // Validate that it's a Yahoo Finance URL

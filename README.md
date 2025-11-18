@@ -19,7 +19,7 @@ Special thanks to the authors and maintainers of the [yahoo-finance2](https://gi
 
 ## Features
 
-- **12 REST API Endpoints** for stock quotes, history, company info, search, trending, recommendations, insights, screeners, performance analysis, financial statements, news, and article content extraction
+- **12 REST API Endpoints** for stock quotes, history, company info, search, trending, recommendations, insights, screeners, performance analysis, financial statements, news, holdings, and article content extraction
 - **12 MCP Tools** (Model Context Protocol) for LLM integration via HTTP + SSE streaming - see [MCP.md](./MCP.md) for detailed documentation
 - **CORS Support** - Cross-origin resource sharing enabled for web applications
 - Multi-ticker support for all endpoints with partial failure handling
@@ -28,7 +28,7 @@ Special thanks to the authors and maintainers of the [yahoo-finance2](https://gi
 - Comprehensive API logging with configurable levels (`error`, `warn`, `info`, `debug`)
 - Docker multi-stage build with multi-architecture support (AMD64, ARM64, ARMv7)
 - Health checks and proper error handling
-- Jest tests with comprehensive coverage (122 tests across 8 test suites)
+- Jest tests with comprehensive coverage (133 tests across 20 test suites)
 - **Interactive API Documentation** at `/api-docs` (Swagger UI)
 - **OpenAPI JSON Specification** at `/api-docs.json`
 - **Modular architecture** with separated concerns
@@ -41,8 +41,19 @@ The codebase is organized into logical modules for better maintainability:
 src/
 ├── server.js                 # Main Express application entry point
 ├── routes/
-│   ├── index.js             # All API endpoint handlers with Swagger docs
-│   └── newsReader.js        # News article content extraction endpoint
+│   ├── index.js             # Main router mounting all route modules with prefixes
+│   ├── quotes.js            # Stock quotes endpoints (/quote)
+│   ├── history.js           # Historical data endpoints (/history)
+│   ├── info.js              # Company information endpoints (/info)
+│   ├── search.js            # Search functionality endpoints (/search)
+│   ├── trending.js          # Trending symbols endpoints (/trending)
+│   ├── recommendations.js   # Stock recommendations endpoints (/recommendations)
+│   ├── insights.js          # Stock insights endpoints (/insights)
+│   ├── screener.js          # Stock screener endpoints (/screener)
+│   ├── financial.js         # Financial statements endpoints (/financial)
+│   ├── news.js              # Company news endpoints (/news)
+│   ├── holdings.js          # ETF holdings endpoints (/holdings)
+│   └── newsReader.js        # News article content extraction endpoints (/news-reader)
 ├── config/
 │   ├── swagger.js           # OpenAPI/Swagger configuration
 │   └── cache.js             # Cache configuration and instance
@@ -50,6 +61,8 @@ src/
 │   └── index.js             # Express middleware (rate limiting, etc.)
 ├── utils/
 │   └── logger.js            # Logging utility with configurable levels
+├── mcp/
+│   └── server.js            # MCP (Model Context Protocol) server implementation
 └── yahoo.js                 # Yahoo Finance2 API wrapper
 
 tests/
@@ -61,7 +74,22 @@ tests/
 ├── middleware/
 │   └── index.test.js        # Middleware configuration tests
 ├── routes/
-│   └── index.test.js        # API routes and endpoints tests
+│   ├── api-consistency.test.js  # API response format consistency tests
+│   ├── financial.test.js        # Financial statements tests
+│   ├── health.test.js           # Health endpoint tests
+│   ├── history.test.js          # Historical data tests
+│   ├── holdings.test.js         # ETF/mutual fund holdings tests
+│   ├── info.test.js             # Company info tests
+│   ├── insights.test.js         # Stock insights tests
+│   ├── news.test.js             # News endpoint tests
+│   ├── newsReader.test.js       # News reader endpoint tests
+│   ├── quote.test.js            # Stock quote tests
+│   ├── recommendations.test.js  # Stock recommendations tests
+│   ├── screener.test.js         # Stock screener tests
+│   ├── search.test.js           # Symbol search tests
+│   └── trending.test.js         # Trending symbols tests
+├── mcp/
+│   └── server.test.js       # MCP server tests
 └── server.test.js           # Main server integration tests
 ```
 
@@ -80,25 +108,102 @@ The main application entry point. Sets up Express middleware, Swagger documentat
 
 ### `src/routes/index.js`
 
-Contains all API endpoint handlers organized by feature. Each endpoint includes Swagger documentation and proper error handling.
+The main router that combines all individual route modules under logical prefixes for better organization and maintainability.
 
-- **Endpoints (9 total):**
+- **Responsibilities:**
+  - Mount individual route modules under specific prefixes
+  - Provide clean API structure with logical grouping
+  - Enable modular development and testing
 
-  - `/health` - Server health check
-  - `/quote/:symbols` - Stock quotes
-  - `/history/:symbols` - Historical data
-  - `/info/:symbols` - Company information
-  - `/search/:query` - Search functionality
-  - `/trending/:region` - Trending stocks
-  - `/recommendations/:symbol` - Stock recommendations
-  - `/insights/:symbol` - Stock insights
-  - `/screener/:type` - Stock screeners
+### `src/routes/quotes.js`
 
-- **Features:**
-  - Caching support with configurable TTL
-  - Multi-ticker support with Promise.allSettled
-  - Comprehensive logging at each step
-  - Error handling and partial failure support
+Stock quotes endpoint module mounted at `/quote`.
+
+- **Endpoint:** `GET /quote/:symbols`
+- **Features:** Current stock price and quote data retrieval
+
+### `src/routes/history.js`
+
+Historical data endpoint module mounted at `/history`.
+
+- **Endpoint:** `GET /history/:symbols`
+- **Features:** Historical price data with configurable periods and intervals
+
+### `src/routes/info.js`
+
+Company information endpoint module mounted at `/info`.
+
+- **Endpoint:** `GET /info/:symbols`
+- **Features:** Company profiles, asset information, and business details
+
+### `src/routes/search.js`
+
+Search functionality endpoint module mounted at `/search`.
+
+- **Endpoint:** `GET /search/:query`
+- **Features:** Symbol and news search capabilities
+
+### `src/routes/trending.js`
+
+Trending symbols endpoint module mounted at `/trending`.
+
+- **Endpoint:** `GET /trending/:region`
+- **Features:** Regional trending stock symbols
+
+### `src/routes/recommendations.js`
+
+Stock recommendations endpoint module mounted at `/recommendations`.
+
+- **Endpoint:** `GET /recommendations/:symbol`
+- **Features:** Similar stock recommendations based on given symbol
+
+### `src/routes/insights.js`
+
+Stock insights endpoint module mounted at `/insights`.
+
+- **Endpoint:** `GET /insights/:symbol`
+- **Features:** Comprehensive stock analysis and insights
+
+### `src/routes/screener.js`
+
+Stock screener endpoint module mounted at `/screener`.
+
+- **Endpoint:** `GET /screener/:type`
+- **Features:** Stock screeners for different market categories
+
+### `src/routes/financial.js`
+
+Financial statements endpoint module mounted at `/financial`.
+
+- **Endpoints:**
+  - `GET /financial/:symbol/:type`
+  - `GET /financial/:symbol/ratios`
+- **Features:** Income statements, balance sheets, cash flow statements, and financial ratios
+
+### `src/routes/news.js`
+
+Company news endpoint module mounted at `/news`.
+
+- **Endpoints:**
+  - `GET /news/:symbol`
+  - `GET /news`
+- **Features:** Company-specific news and general market news
+
+### `src/routes/holdings.js`
+
+ETF holdings endpoint module mounted at `/holdings`.
+
+- **Endpoints:**
+  - `GET /holdings/:symbol`
+  - `GET /holdings/:symbol/fund`
+- **Features:** ETF and mutual fund holdings data
+
+### `src/routes/newsReader.js`
+
+News article content extraction endpoint module mounted at `/news-reader`.
+
+- **Endpoint:** `GET /news-reader/*`
+- **Features:** Full article content extraction from Yahoo Finance news URLs
 
 ### `src/config/swagger.js`
 
@@ -190,12 +295,13 @@ This runs the Jest test suite covering:
 - **Cache configuration tests** - Caching behavior and configuration
 - **Swagger configuration tests** - OpenAPI specification validation
 - **Middleware tests** - Rate limiting configuration
-- **Route tests** - All API endpoints and handlers
+- **Route tests** - All API endpoints and handlers (133 tests across 14 route test files)
+- **API consistency tests** - Response format validation across endpoints
 - **Integration tests** - Full server functionality
 
 Test coverage includes:
 
-- 66 test cases across 6 test files
+- 133 test cases across 20 test files
 - Unit tests for each module
 - Integration tests for API endpoints
 - Configuration validation tests
@@ -786,7 +892,89 @@ curl "http://localhost:3000/news/AAPL"
 curl "http://localhost:3000/news/MSFT?count=5"
 ```
 
-### GET /news_reader/:url
+### GET /holdings/:symbol
+
+Get ETF and mutual fund holdings data.
+
+**Parameters:**
+
+- `symbol`: ETF or mutual fund symbol (e.g., SPY, VOO)
+
+**Response:** Holdings data with top positions and fund information.
+
+```json
+{
+  "symbol": "SPY",
+  "holdings": [
+    {
+      "symbol": "AAPL",
+      "holdingName": "Apple Inc.",
+      "holdingPercent": 0.0796
+    },
+    {
+      "symbol": "MSFT",
+      "holdingName": "Microsoft Corporation",
+      "holdingPercent": 0.0673
+    },
+    {
+      "symbol": "NVDA",
+      "holdingName": "NVIDIA Corporation",
+      "holdingPercent": 0.0611
+    }
+  ],
+  "equityHoldings": {
+    "priceToEarnings": 25.5,
+    "priceToBook": 4.2,
+    "priceToSales": 3.1,
+    "priceToCashflow": 18.7
+  }
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:3000/holdings/SPY
+```
+
+### GET /holdings/:symbol/fund
+
+Get detailed fund holdings information.
+
+**Parameters:**
+
+- `symbol`: ETF or mutual fund symbol
+
+**Response:** Detailed fund holdings and metadata.
+
+```json
+{
+  "symbol": "SPY",
+  "fundProfile": {
+    "family": "State Street Global Advisors",
+    "category": "Large Blend",
+    "legalType": "Exchange Traded Fund",
+    "managementFee": 0.0009
+  },
+  "topHoldings": {
+    "holdings": [
+      {
+        "symbol": "AAPL",
+        "holdingName": "Apple Inc.",
+        "holdingPercent": 0.0796
+      }
+    ]
+  }
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:3000/holdings/SPY/fund
+```
+
+### GET /news-reader/\*
 
 Extract article title and content from Yahoo Finance news articles.
 
@@ -808,10 +996,10 @@ Extract article title and content from Yahoo Finance news articles.
 
 ```bash
 # Extract content from a Bitcoin article
-curl "http://localhost:3000/news_reader/https://finance.yahoo.com/news/bitcoin-price-under-pressure-slips-below-92000-as-self-fulfilling-prophecy-puts-4-year-cycle-in-focus-203113535.html"
+curl "http://localhost:3000/news-reader/https://finance.yahoo.com/news/bitcoin-price-under-pressure-slips-below-92000-as-self-fulfilling-prophecy-puts-4-year-cycle-in-focus-203113535.html"
 
 # Extract content from an Amazon article
-curl "http://localhost:3000/news_reader/https://finance.yahoo.com/m/f2290ae0-0782-32e2-94c1-0614377f3478/amazon-ford-partner-on-used.html"
+curl "http://localhost:3000/news-reader/https://finance.yahoo.com/m/f2290ae0-0782-32e2-94c1-0614377f3478/amazon-ford-partner-on-used.html"
 ```
 
 ## MCP (Model Context Protocol) Integration
