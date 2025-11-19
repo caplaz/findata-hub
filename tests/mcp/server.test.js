@@ -375,9 +375,9 @@ describe("MCP Server", () => {
   });
 
   describe("Integration tests", () => {
-    test("should list all 11 tools", async () => {
+    test("should list all 14 tools", async () => {
       const response = await request(app).get("/mcp/health");
-      expect(response.body.toolsAvailable).toBe(11);
+      expect(response.body.toolsAvailable).toBe(14);
     });
 
     test("should support all tool execution methods", async () => {
