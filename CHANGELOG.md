@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2025-11-19
+
+### Added
+
+- **OpenAI Client Compatibility**: Full support for OpenAI function calling format
+  - Added `?format=openai` query parameter to `/mcp/tools` endpoint
+  - Returns tool definitions in the exact format expected by OpenAI API
+  - Enables direct integration with OpenAI Node.js and Python clients
+
+- **New MCP Tools**: Added 3 new tools to match REST API functionality
+  - `get_etf_holdings`: Get ETF holdings and sector weightings
+  - `get_fund_holdings`: Get mutual fund holdings and composition
+  - `read_news_article`: Extract content from Yahoo Finance news articles
+
+- **Shared News Scraper**: Refactored news scraping logic into reusable utility
+  - Created `src/utils/newsScraper.js` for shared use between REST and MCP
+  - Improved maintainability and reduced code duplication
+
+### Technical Details
+
+- Implemented caching for all new MCP tools matching REST API behavior
+- Added comprehensive tests for OpenAI format compatibility
+- Added example script `examples/openai-client.js` demonstrating integration
+- All tests pass (131/131) including new MCP tool tests
+
 ## [1.4.2] - 2025-11-17
 
 ### Fixed

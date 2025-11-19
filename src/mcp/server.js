@@ -14,6 +14,11 @@
 import express from "express";
 import yahooFinance from "../yahoo.js";
 import { log } from "../utils/logger.js";
+import { cache, CACHE_ENABLED } from "../config/cache.js";
+import {
+  fetchArticleContent,
+  extractArticleContent,
+} from "../utils/newsScraper.js";
 
 const router = express.Router();
 
@@ -302,6 +307,67 @@ const getStockNewsTool = {
   },
 };
 
+/**
+ * ETF Holdings Tool
+ * Get ETF holdings and sector weightings
+ */
+const getEtfHoldingsTool = {
+  name: "get_etf_holdings",
+  description:
+    "Get ETF holdings, sector allocations, and position breakdowns. Useful for analyzing ETF composition.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      symbol: {
+        type: "string",
+        description: "ETF ticker symbol (e.g., 'SPY', 'QQQ')",
+      },
+    },
+    required: ["symbol"],
+  },
+};
+
+/**
+ * Mutual Fund Holdings Tool
+ * Get mutual fund holdings and composition
+ */
+const getFundHoldingsTool = {
+  name: "get_fund_holdings",
+  description:
+    "Get mutual fund holdings and composition data. Useful for analyzing mutual fund portfolios.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      symbol: {
+        type: "string",
+        description: "Mutual fund ticker symbol (e.g., 'VFIAX')",
+      },
+    },
+    required: ["symbol"],
+  },
+};
+
+/**
+ * News Reader Tool
+ * Extract content from Yahoo Finance news articles
+ */
+const readNewsArticleTool = {
+  name: "read_news_article",
+  description:
+    "Extract the main title and text content from a Yahoo Finance news article URL.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      url: {
+        type: "string",
+        description:
+          "The full Yahoo Finance article URL (must start with https://finance.yahoo.com/)",
+      },
+    },
+    required: ["url"],
+  },
+};
+
 const tools = [
   getStockQuoteTool,
   getStockHistoryTool,
@@ -314,6 +380,9 @@ const tools = [
   analyzeStockPerformanceTool,
   getFinancialStatementTool,
   getStockNewsTool,
+  getEtfHoldingsTool,
+  getFundHoldingsTool,
+  readNewsArticleTool,
 ];
 
 // ============================================================================
@@ -847,6 +916,152 @@ async function handleGetStockNews(symbol, count = 10) {
   }
 }
 
+/**
+ * Handle ETF holdings requests
+ */
+async function handleGetEtfHoldings(symbol) {
+  try {
+    const cacheKey = `holdings:${symbol}`;
+    if (CACHE_ENABLED) {
+      const cached = cache.get(cacheKey);
+      if (cached) {
+        log("debug", `MCP: Cache hit for ETF holdings: ${symbol}`);
+        return cached;
+      }
+    }
+
+    log("debug", `MCP: Fetching ETF holdings for ${symbol}`);
+
+    const result = await yahooFinance.quoteSummary(symbol, {
+      modules: ["topHoldings", "sectorWeightings", "equityHoldings"],
+    });
+
+    if (CACHE_ENABLED) {
+      cache.set(cacheKey, result);
+    }
+
+    return result;
+  } catch (error) {
+    throw new Error(`ETF holdings tool error: ${error.message}`);
+  }
+}
+
+/**
+ * Handle mutual fund holdings requests
+ */
+async function handleGetFundHoldings(symbol) {
+  try {
+    const cacheKey = `fund_holdings:${symbol}`;
+    if (CACHE_ENABLED) {
+      const cached = cache.get(cacheKey);
+      if (cached) {
+        log("debug", `MCP: Cache hit for fund holdings: ${symbol}`);
+        return cached;
+      }
+    }
+
+    log("debug", `MCP: Fetching fund holdings for ${symbol}`);
+
+    const result = await yahooFinance.quoteSummary(symbol, {
+      modules: ["fundHoldings", "fundProfile"],
+    });
+
+    if (CACHE_ENABLED) {
+      cache.set(cacheKey, result);
+    }
+
+    return result;
+  } catch (error) {
+    throw new Error(`Fund holdings tool error: ${error.message}`);
+  }
+}
+
+/**
+ * Handle news reader requests
+ */
+async function handleReadNewsArticle(url) {
+  try {
+    // Validate URL
+    if (!url.startsWith("https://finance.yahoo.com/")) {
+      throw new Error(
+        "Invalid URL. Must be a full Yahoo Finance URL starting with https://finance.yahoo.com/"
+      );
+    }
+
+    const cacheKey = `news_reader:${url}`;
+    if (CACHE_ENABLED) {
+      const cached = cache.get(cacheKey);
+      if (cached) {
+        log("debug", `MCP: Cache hit for news reader: ${url}`);
+        return cached;
+      }
+    }
+
+    log("debug", `MCP: Reading news article from ${url}`);
+
+    // Fetch article content with redirect handling
+    let response = await fetchArticleContent(url);
+    let redirectCount = 0;
+    let finalUrl = url;
+
+    // Handle redirects
+    while (
+      (response.status === 301 || response.status === 302) &&
+      redirectCount < 5
+    ) {
+      const location = response.headers.location;
+      if (!location) {
+        throw new Error(`Redirect response missing Location header`);
+      }
+
+      // Handle relative URLs
+      const redirectUrl = location.startsWith("http")
+        ? location
+        : `https://finance.yahoo.com${location}`;
+      log("info", `Following redirect from ${finalUrl} to ${redirectUrl}`);
+
+      finalUrl = redirectUrl;
+      response = await fetchArticleContent(finalUrl, ++redirectCount);
+    }
+
+    if (response.status !== 200) {
+      if (response.status === 404) {
+        throw new Error("Article not found. The requested URL does not exist.");
+      } else {
+        throw new Error(`Request failed with status code ${response.status}`);
+      }
+    }
+
+    // Extract article content
+    const { title, content } = extractArticleContent(response.data, finalUrl);
+
+    if (!title || !content) {
+      throw new Error(
+        "Unable to extract article content. The article may not exist or the page structure has changed."
+      );
+    }
+
+    const result = {
+      title,
+      content,
+      url: finalUrl,
+    };
+
+    if (CACHE_ENABLED) {
+      cache.set(cacheKey, result);
+      // Also cache under final URL if it was redirected
+      if (finalUrl !== url) {
+        const finalCacheKey = `news_reader:${finalUrl}`;
+        cache.set(finalCacheKey, result);
+      }
+    }
+
+    return result;
+  } catch (error) {
+    throw new Error(`News reader tool error: ${error.message}`);
+  }
+}
+
 // ============================================================================
 // Tool Handler Registry
 // ============================================================================
@@ -866,6 +1081,9 @@ const toolHandlers = {
   analyze_stock_performance: handleAnalyzeStockPerformance,
   get_financial_statement: handleGetFinancialStatement,
   get_stock_news: handleGetStockNews,
+  get_etf_holdings: handleGetEtfHoldings,
+  get_fund_holdings: handleGetFundHoldings,
+  read_news_article: handleReadNewsArticle,
 };
 
 // ============================================================================
@@ -878,7 +1096,21 @@ const toolHandlers = {
  * Returns all available MCP tools with their schemas
  */
 router.get("/tools", (req, res) => {
-  log("info", "MCP: Tools list requested");
+  const format = req.query.format;
+  log("info", `MCP: Tools list requested (format: ${format || "standard"})`);
+
+  if (format === "openai") {
+    const openAiTools = tools.map((tool) => ({
+      type: "function",
+      function: {
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.inputSchema,
+      },
+    }));
+    return res.json({ tools: openAiTools });
+  }
+
   res.json({
     tools,
   });

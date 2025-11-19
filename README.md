@@ -20,7 +20,8 @@ Special thanks to the authors and maintainers of the [yahoo-finance2](https://gi
 ## Features
 
 - **12 REST API Endpoints** for stock quotes, history, company info, search, trending, recommendations, insights, screeners, performance analysis, financial statements, news, holdings, and article content extraction
-- **12 MCP Tools** (Model Context Protocol) for LLM integration via HTTP + SSE streaming - see [MCP.md](./MCP.md) for detailed documentation
+- **14 MCP Tools** (Model Context Protocol) for LLM integration via HTTP + SSE streaming - see [MCP.md](./MCP.md) for detailed documentation
+- **OpenAPI Client Compatibility** - Full support for OpenAI function calling format via `?format=openai`
 - **CORS Support** - Cross-origin resource sharing enabled for web applications
 - Multi-ticker support for all endpoints with partial failure handling
 - Response caching with configurable TTL
