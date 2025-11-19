@@ -17,9 +17,17 @@ jest.unstable_mockModule('yahoo-finance2', () => ({
     default: jest.fn(() => mockYahooFinanceInstance)
 }));
 
+const mockNewsScraper = {
+    fetchArticleContent: jest.fn(),
+    extractArticleContent: jest.fn()
+};
+
+jest.unstable_mockModule('../src/utils/newsScraper.js', () => mockNewsScraper);
+
 // Import app dynamically AFTER mocking
 const app = (await import('../src/server.js')).default;
 const yahooFinance = mockYahooFinanceInstance;
+const newsScraper = mockNewsScraper;
 
 describe('MCP Server Endpoints', () => {
 
@@ -54,9 +62,23 @@ describe('MCP Server Endpoints', () => {
 
         it('should execute get_etf_holdings tool', async () => {
             const mockData = {
-                topHoldings: { holdings: [{ symbol: 'AAPL', holdingPercent: 0.05 }] },
-                sectorWeightings: [],
-                equityHoldings: {}
+                topHoldings: {
+                    holdings: [{ symbol: 'AAPL', holdingName: 'Apple Inc', holdingPercent: 0.05 }],
+                    sectorWeightings: [{ technology: 0.3 }],
+                    stockPosition: 0.99,
+                    bondPosition: 0,
+                    cashPosition: 0.01,
+                    otherPosition: 0
+                },
+                fundProfile: {
+                    family: 'SPDR',
+                    categoryName: 'Large Blend',
+                    legalType: 'ETF',
+                    feesExpensesInvestment: {
+                        annualReportExpenseRatio: 0.0009,
+                        totalNetAssets: 400000
+                    }
+                }
             };
             yahooFinance.quoteSummary.mockResolvedValue(mockData);
 
@@ -69,14 +91,32 @@ describe('MCP Server Endpoints', () => {
 
             expect(res.statusCode).toBe(200);
             const content = JSON.parse(res.body.content[0].text);
-            expect(content).toEqual(mockData);
-            expect(yahooFinance.quoteSummary).toHaveBeenCalledWith('SPY', expect.any(Object));
+            expect(content.symbol).toBe('SPY');
+            expect(content.fundName).toBe('SPDR');
+            expect(content.topHoldings).toHaveLength(1);
+            expect(content.topHoldings[0].symbol).toBe('AAPL');
+            expect(yahooFinance.quoteSummary).toHaveBeenCalledWith('SPY', { modules: ['topHoldings', 'fundProfile'] });
         });
 
         it('should execute get_fund_holdings tool', async () => {
             const mockData = {
-                fundHoldings: { holdings: [] },
-                fundProfile: { categoryName: 'Large Blend' }
+                topHoldings: {
+                    holdings: [{ symbol: 'MSFT', holdingName: 'Microsoft', holdingPercent: 0.04 }],
+                    sectorWeightings: [],
+                    stockPosition: 0.98,
+                    bondPosition: 0.01,
+                    cashPosition: 0.01,
+                    otherPosition: 0
+                },
+                fundProfile: {
+                    family: 'Vanguard',
+                    categoryName: 'Large Blend',
+                    legalType: 'Mutual Fund',
+                    feesExpensesInvestment: {
+                        annualReportExpenseRatio: 0.0004,
+                        totalNetAssets: 800000
+                    }
+                }
             };
             yahooFinance.quoteSummary.mockResolvedValue(mockData);
 
@@ -89,7 +129,10 @@ describe('MCP Server Endpoints', () => {
 
             expect(res.statusCode).toBe(200);
             const content = JSON.parse(res.body.content[0].text);
-            expect(content).toEqual(mockData);
+            expect(content.symbol).toBe('VFIAX');
+            expect(content.fundName).toBe('Vanguard');
+            expect(content.topHoldings).toHaveLength(1);
+            expect(content.topHoldings[0].symbol).toBe('MSFT');
         });
 
         it('should handle missing tools gracefully', async () => {
@@ -101,6 +144,292 @@ describe('MCP Server Endpoints', () => {
                 });
 
             expect(res.statusCode).toBe(404);
+        });
+
+        it('should execute get_stock_quote tool', async () => {
+            const mockQuote = {
+                symbol: 'AAPL',
+                regularMarketPrice: 150.0,
+                currency: 'USD',
+                regularMarketChange: 2.5,
+                regularMarketChangePercent: 1.6,
+                marketCap: 2500000000000
+            };
+            yahooFinance.quote.mockResolvedValue(mockQuote);
+
+            const res = await request(app)
+                .post('/mcp/call')
+                .send({
+                    name: 'get_stock_quote',
+                    arguments: { symbols: 'AAPL' }
+                });
+
+            expect(res.statusCode).toBe(200);
+            const content = JSON.parse(res.body.content[0].text);
+            expect(content).toHaveLength(1);
+            expect(content[0].symbol).toBe('AAPL');
+            expect(content[0].price).toBe(150.0);
+            expect(yahooFinance.quote).toHaveBeenCalledWith('AAPL');
+        });
+
+        it('should execute get_stock_history tool', async () => {
+            const mockHistory = [
+                { date: new Date('2023-01-01'), open: 100, high: 110, low: 90, close: 105, volume: 1000000 },
+                { date: new Date('2023-01-02'), open: 105, high: 115, low: 100, close: 110, volume: 1200000 }
+            ];
+            yahooFinance.historical.mockResolvedValue(mockHistory);
+
+            const res = await request(app)
+                .post('/mcp/call')
+                .send({
+                    name: 'get_stock_history',
+                    arguments: { symbols: 'AAPL', period: '1mo', interval: '1d' }
+                });
+
+            expect(res.statusCode).toBe(200);
+            const content = JSON.parse(res.body.content[0].text);
+            expect(content).toHaveLength(1);
+            expect(content[0].symbol).toBe('AAPL');
+            expect(content[0].data).toHaveLength(2);
+            expect(yahooFinance.historical).toHaveBeenCalledWith('AAPL', { period: '1mo', interval: '1d' });
+        });
+
+        it('should execute get_company_info tool', async () => {
+            const mockInfo = {
+                assetProfile: {
+                    longName: 'Apple Inc.',
+                    industry: 'Consumer Electronics',
+                    sector: 'Technology',
+                    website: 'https://www.apple.com',
+                    longBusinessSummary: 'Apple Inc. designs, manufactures, and markets smartphones...'
+                },
+                financialData: {
+                    revenuePerShare: 20.5,
+                    profitMargins: 0.25
+                }
+            };
+            yahooFinance.quoteSummary.mockResolvedValue(mockInfo);
+
+            const res = await request(app)
+                .post('/mcp/call')
+                .send({
+                    name: 'get_company_info',
+                    arguments: { symbols: 'AAPL' }
+                });
+
+            expect(res.statusCode).toBe(200);
+            const content = JSON.parse(res.body.content[0].text);
+            expect(content).toHaveLength(1);
+            expect(content[0].symbol).toBe('AAPL');
+            expect(content[0].company).toBe('Apple Inc.');
+            expect(content[0].industry).toBe('Consumer Electronics');
+        });
+
+        it('should execute search_symbols tool', async () => {
+            const mockSearch = {
+                quotes: [
+                    { symbol: 'AAPL', shortname: 'Apple Inc.', type: 'EQUITY', exchange: 'NMS', score: 10000 },
+                    { symbol: 'MSFT', shortname: 'Microsoft Corp.', type: 'EQUITY', exchange: 'NMS', score: 9000 }
+                ]
+            };
+            yahooFinance.search.mockResolvedValue(mockSearch);
+
+            const res = await request(app)
+                .post('/mcp/call')
+                .send({
+                    name: 'search_symbols',
+                    arguments: { query: 'tech' }
+                });
+
+            expect(res.statusCode).toBe(200);
+            const content = JSON.parse(res.body.content[0].text);
+            expect(content.query).toBe('tech');
+            expect(content.count).toBe(2);
+            expect(content.results).toHaveLength(2);
+            expect(yahooFinance.search).toHaveBeenCalledWith('tech');
+        });
+
+        it('should execute get_trending_symbols tool', async () => {
+            const mockTrending = {
+                quotes: [
+                    { symbol: 'NVDA', shortname: 'NVIDIA Corp', regularMarketPrice: 400, regularMarketChange: 10, regularMarketChangePercent: 2.5 }
+                ]
+            };
+            yahooFinance.trendingSymbols.mockResolvedValue(mockTrending);
+
+            const res = await request(app)
+                .post('/mcp/call')
+                .send({
+                    name: 'get_trending_symbols',
+                    arguments: { region: 'US' }
+                });
+
+            expect(res.statusCode).toBe(200);
+            const content = JSON.parse(res.body.content[0].text);
+            expect(content.region).toBe('US');
+            expect(content.symbols).toHaveLength(1);
+            expect(content.symbols[0].symbol).toBe('NVDA');
+            expect(yahooFinance.trendingSymbols).toHaveBeenCalledWith('US');
+        });
+
+        it('should execute get_stock_recommendations tool', async () => {
+            const mockRecs = [
+                { symbol: 'AAPL', shortname: 'Apple', recommendationKey: 'buy', recommendationScore: 2.0 }
+            ];
+            yahooFinance.recommendationsBySymbol.mockResolvedValue(mockRecs);
+
+            const res = await request(app)
+                .post('/mcp/call')
+                .send({
+                    name: 'get_stock_recommendations',
+                    arguments: { symbol: 'AAPL' }
+                });
+
+            expect(res.statusCode).toBe(200);
+            const content = JSON.parse(res.body.content[0].text);
+            expect(content.baseSymbol).toBe('AAPL');
+            expect(content.recommendations).toHaveLength(1);
+            expect(yahooFinance.recommendationsBySymbol).toHaveBeenCalledWith('AAPL');
+        });
+
+        it('should execute get_stock_insights tool', async () => {
+            const mockInsights = {
+                recommendationTrend: { trend: [] },
+                upgradeDowngradeHistory: { history: [] },
+                insiderTransactions: { transactions: [] },
+                insiderHolders: { holders: [] }
+            };
+            yahooFinance.quoteSummary.mockResolvedValue(mockInsights);
+
+            const res = await request(app)
+                .post('/mcp/call')
+                .send({
+                    name: 'get_stock_insights',
+                    arguments: { symbol: 'AAPL' }
+                });
+
+            expect(res.statusCode).toBe(200);
+            const content = JSON.parse(res.body.content[0].text);
+            expect(content.symbol).toBe('AAPL');
+            expect(content).toHaveProperty('recommendations');
+            expect(content).toHaveProperty('insiderTransactions');
+        });
+
+        it('should execute get_stock_screener tool', async () => {
+            const mockScreener = {
+                quotes: [
+                    { symbol: 'AMD', shortname: 'AMD', regularMarketPrice: 100, regularMarketChange: 5, regularMarketChangePercent: 5.0 }
+                ]
+            };
+            yahooFinance.screeners.mockResolvedValue(mockScreener);
+
+            const res = await request(app)
+                .post('/mcp/call')
+                .send({
+                    name: 'get_stock_screener',
+                    arguments: { type: 'day_gainers' }
+                });
+
+            expect(res.statusCode).toBe(200);
+            const content = JSON.parse(res.body.content[0].text);
+            expect(content.type).toBe('day_gainers');
+            expect(content.stocks).toHaveLength(1);
+            expect(content.stocks[0].symbol).toBe('AMD');
+            expect(yahooFinance.screeners).toHaveBeenCalledWith('day_gainers');
+        });
+
+        it('should execute analyze_stock_performance tool', async () => {
+            const mockHistory = [
+                { date: new Date('2023-01-01'), open: 100, high: 110, low: 90, close: 100, volume: 1000000 },
+                { date: new Date('2023-01-02'), open: 105, high: 115, low: 100, close: 110, volume: 1200000 }
+            ];
+            const mockQuote = { regularMarketPrice: 110, regularMarketChange: 10, regularMarketChangePercent: 10 };
+
+            yahooFinance.historical.mockResolvedValue(mockHistory);
+            yahooFinance.quote.mockResolvedValue(mockQuote);
+
+            const res = await request(app)
+                .post('/mcp/call')
+                .send({
+                    name: 'analyze_stock_performance',
+                    arguments: { symbol: 'AAPL', period: '1mo' }
+                });
+
+            expect(res.statusCode).toBe(200);
+            const content = JSON.parse(res.body.content[0].text);
+            expect(content.symbol).toBe('AAPL');
+            expect(content.totalReturn).toBe("10.00"); // (110-100)/100 * 100
+        });
+
+        it('should execute get_financial_statement tool', async () => {
+            const mockFinancials = [
+                { date: new Date('2023-12-31'), totalRevenue: 1000000, netIncome: 200000 }
+            ];
+            yahooFinance.fundamentalsTimeSeries.mockResolvedValue(mockFinancials);
+
+            const res = await request(app)
+                .post('/mcp/call')
+                .send({
+                    name: 'get_financial_statement',
+                    arguments: { symbol: 'AAPL', statementType: 'income' }
+                });
+
+            expect(res.statusCode).toBe(200);
+            const content = JSON.parse(res.body.content[0].text);
+            expect(content.symbol).toBe('AAPL');
+            expect(content.type).toBe('income');
+            expect(content.statements).toHaveLength(1);
+            expect(content.statements[0].totalRevenue).toBe(1000000);
+        });
+
+        it('should execute get_stock_news tool', async () => {
+            const mockSearch = {
+                news: [
+                    { title: 'News 1', publisher: 'Pub 1', link: 'http://link1', providerPublishTime: 1234567890, type: 'STORY', relatedTickers: ['AAPL'] }
+                ]
+            };
+            const mockInfo = { assetProfile: { longName: 'Apple Inc.' } };
+
+            yahooFinance.search.mockResolvedValue(mockSearch);
+            yahooFinance.quoteSummary.mockResolvedValue(mockInfo);
+
+            const res = await request(app)
+                .post('/mcp/call')
+                .send({
+                    name: 'get_stock_news',
+                    arguments: { symbol: 'AAPL' }
+                });
+
+            expect(res.statusCode).toBe(200);
+            const content = JSON.parse(res.body.content[0].text);
+            expect(content.symbol).toBe('AAPL');
+            expect(content.news).toHaveLength(1);
+            expect(content.news[0].title).toBe('News 1');
+        });
+
+        it('should execute read_news_article tool', async () => {
+            const mockUrl = 'https://finance.yahoo.com/news/test-article.html';
+            newsScraper.fetchArticleContent.mockResolvedValue({
+                status: 200,
+                data: '<html><body><h1>Title</h1><p>Content</p></body></html>'
+            });
+            newsScraper.extractArticleContent.mockReturnValue({
+                title: 'Test Title',
+                content: 'Test Content'
+            });
+
+            const res = await request(app)
+                .post('/mcp/call')
+                .send({
+                    name: 'read_news_article',
+                    arguments: { url: mockUrl }
+                });
+
+            expect(res.statusCode).toBe(200);
+            const content = JSON.parse(res.body.content[0].text);
+            expect(content.title).toBe('Test Title');
+            expect(content.content).toBe('Test Content');
+            expect(content.url).toBe(mockUrl);
         });
     });
 });

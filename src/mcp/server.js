@@ -933,14 +933,41 @@ async function handleGetEtfHoldings(symbol) {
     log("debug", `MCP: Fetching ETF holdings for ${symbol}`);
 
     const result = await yahooFinance.quoteSummary(symbol, {
-      modules: ["topHoldings", "sectorWeightings", "equityHoldings"],
+      modules: ["topHoldings", "fundProfile"],
     });
 
+    const holdings = result.topHoldings || {};
+    const profile = result.fundProfile || {};
+
+    const formatted = {
+      symbol,
+      fundName: profile.family,
+      category: profile.categoryName,
+      legalType: profile.legalType,
+      expenseRatio: profile.feesExpensesInvestment?.annualReportExpenseRatio,
+      netAssets: profile.feesExpensesInvestment?.totalNetAssets,
+      topHoldings: (holdings.holdings || []).map((h) => ({
+        symbol: h.symbol,
+        name: h.holdingName,
+        percent: h.holdingPercent,
+      })),
+      sectorWeightings: (holdings.sectorWeightings || []).map((s) => {
+        const [sector, weight] = Object.entries(s)[0];
+        return { sector, weight };
+      }),
+      assetAllocation: {
+        stocks: holdings.stockPosition,
+        bonds: holdings.bondPosition,
+        cash: holdings.cashPosition,
+        other: holdings.otherPosition,
+      },
+    };
+
     if (CACHE_ENABLED) {
-      cache.set(cacheKey, result);
+      cache.set(cacheKey, formatted);
     }
 
-    return result;
+    return formatted;
   } catch (error) {
     throw new Error(`ETF holdings tool error: ${error.message}`);
   }
@@ -963,14 +990,41 @@ async function handleGetFundHoldings(symbol) {
     log("debug", `MCP: Fetching fund holdings for ${symbol}`);
 
     const result = await yahooFinance.quoteSummary(symbol, {
-      modules: ["fundHoldings", "fundProfile"],
+      modules: ["topHoldings", "fundProfile"],
     });
 
+    const holdings = result.topHoldings || {};
+    const profile = result.fundProfile || {};
+
+    const formatted = {
+      symbol,
+      fundName: profile.family,
+      category: profile.categoryName,
+      legalType: profile.legalType,
+      expenseRatio: profile.feesExpensesInvestment?.annualReportExpenseRatio,
+      netAssets: profile.feesExpensesInvestment?.totalNetAssets,
+      topHoldings: (holdings.holdings || []).map((h) => ({
+        symbol: h.symbol,
+        name: h.holdingName,
+        percent: h.holdingPercent,
+      })),
+      sectorWeightings: (holdings.sectorWeightings || []).map((s) => {
+        const [sector, weight] = Object.entries(s)[0];
+        return { sector, weight };
+      }),
+      assetAllocation: {
+        stocks: holdings.stockPosition,
+        bonds: holdings.bondPosition,
+        cash: holdings.cashPosition,
+        other: holdings.otherPosition,
+      },
+    };
+
     if (CACHE_ENABLED) {
-      cache.set(cacheKey, result);
+      cache.set(cacheKey, formatted);
     }
 
-    return result;
+    return formatted;
   } catch (error) {
     throw new Error(`Fund holdings tool error: ${error.message}`);
   }
