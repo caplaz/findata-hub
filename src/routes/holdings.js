@@ -20,7 +20,7 @@ const router = Router();
  * /holdings/{symbol}:
  *   get:
  *     summary: Get ETF holdings
- *     description: Retrieve ETF holdings, sector allocations, and position breakdowns
+ *     description: Retrieve ETF holdings, sector allocations, and position breakdowns. Falls back to basic ETF information if detailed holdings are unavailable.
  *     tags: [Holdings]
  *     parameters:
  *       - in: path
@@ -32,15 +32,29 @@ const router = Router();
  *           example: "SPY"
  *     responses:
  *       200:
- *         description: ETF holdings data
+ *         description: ETF holdings data or fallback basic information
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ETFHoldings'
- *             example:
- *               holdings: [{"symbol": "AAPL", "holdingPercent": 6.61}]
- *               sectorWeightings: [{"sector": "Technology", "percentage": 25.5}]
- *               equityHoldings: {"priceToEarnings": 22.5}
+ *               oneOf:
+ *                 - $ref: '#/components/schemas/ETFHoldings'
+ *                 - $ref: '#/components/schemas/ETFFallback'
+ *             examples:
+ *               detailed:
+ *                 summary: Detailed holdings data
+ *                 value:
+ *                   holdings: [{"symbol": "AAPL", "holdingPercent": 6.61}]
+ *                   sectorWeightings: [{"sector": "Technology", "percentage": 25.5}]
+ *                   equityHoldings: {"priceToEarnings": 22.5}
+ *               fallback:
+ *                 summary: Fallback basic information
+ *                 value:
+ *                   fallback: true
+ *                   symbol: "SPY"
+ *                   shortName: "SPDR S&P 500 ETF Trust"
+ *                   regularMarketPrice: 450.25
+ *                   marketCap: 450000000000
+ *                   message: "Detailed holdings data not available. Showing basic ETF information."
  *       500:
  *         description: Server error
  *         content:
@@ -64,9 +78,36 @@ router.get("/:symbol", async (req, res) => {
   }
 
   try {
-    const result = await yahooFinance.quoteSummary(symbol, {
-      modules: ["topHoldings", "sectorWeightings", "equityHoldings"],
-    });
+    // Try to get detailed holdings data first
+    let result;
+    try {
+      result = await yahooFinance.quoteSummary(symbol, {
+        modules: ["topHoldings", "sectorWeightings", "equityHoldings"],
+      });
+    } catch (holdingsError) {
+      log(
+        "warn",
+        `Detailed holdings not available for ${symbol}, using fallback: ${holdingsError.message}`
+      );
+
+      // Fallback: Get basic quote data
+      const quoteData = await yahooFinance.quote(symbol);
+
+      result = {
+        fallback: true,
+        symbol: quoteData.symbol,
+        shortName: quoteData.shortName,
+        longName: quoteData.longName,
+        regularMarketPrice: quoteData.regularMarketPrice,
+        marketCap: quoteData.marketCap,
+        volume: quoteData.volume,
+        averageVolume: quoteData.averageVolume,
+        fiftyTwoWeekHigh: quoteData.fiftyTwoWeekHigh,
+        fiftyTwoWeekLow: quoteData.fiftyTwoWeekLow,
+        message:
+          "Detailed holdings data not available. Showing basic ETF information.",
+      };
+    }
 
     log("debug", `ETF holdings retrieved for ${symbol}`);
 

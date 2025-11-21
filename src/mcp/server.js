@@ -1359,6 +1359,212 @@ router.get("/health", (req, res) => {
   });
 });
 
+/**
+ * @swagger
+ * tags:
+ *   - name: MCP
+ *     description: Model Context Protocol endpoints for LLM integration
+ */
+
+/**
+ * @swagger
+ * /mcp/health:
+ *   get:
+ *     summary: MCP server health check
+ *     description: Returns MCP server status and available tools
+ *     tags: [MCP]
+ *     responses:
+ *       200:
+ *         description: MCP server is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "healthy"
+ *                 service:
+ *                   type: string
+ *                   example: "MCP Server"
+ *                 version:
+ *                   type: string
+ *                   example: "1.0.0"
+ *                 toolsAvailable:
+ *                   type: integer
+ *                   example: 14
+ *                 tools:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["get_stock_quote", "get_stock_history"]
+ *                 features:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["json-response", "sse-streaming"]
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ */
+
+/**
+ * @swagger
+ * /mcp/tools:
+ *   get:
+ *     summary: List all available MCP tools
+ *     description: Returns all available MCP tools with their schemas and descriptions
+ *     tags: [MCP]
+ *     parameters:
+ *       - in: query
+ *         name: format
+ *         description: Response format
+ *         schema:
+ *           type: string
+ *           enum: [standard, openai]
+ *           default: standard
+ *         example: "standard"
+ *     responses:
+ *       200:
+ *         description: List of MCP tools
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tools:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       name:
+ *                         type: string
+ *                         example: "get_stock_quote"
+ *                       description:
+ *                         type: string
+ *                         example: "Get current stock quotes for one or more ticker symbols"
+ *                       inputSchema:
+ *                         type: object
+ *                         description: JSON schema for tool input parameters
+ */
+
+/**
+ * @swagger
+ * /mcp/call:
+ *   post:
+ *     summary: Execute MCP tool (JSON response)
+ *     description: Executes an MCP tool with provided arguments and returns JSON response
+ *     tags: [MCP]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Tool name to execute
+ *                 example: "get_stock_quote"
+ *               arguments:
+ *                 type: object
+ *                 description: Tool arguments
+ *                 example: {"symbols": "AAPL,GOOGL"}
+ *             required:
+ *               - name
+ *               - arguments
+ *     responses:
+ *       200:
+ *         description: Tool execution successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 content:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       type:
+ *                         type: string
+ *                         example: "text"
+ *                       text:
+ *                         type: string
+ *                         description: Tool execution result as JSON string
+ *       400:
+ *         description: Missing required fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Unknown tool
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Tool execution error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+
+/**
+ * @swagger
+ * /mcp/call-stream:
+ *   post:
+ *     summary: Execute MCP tool (SSE streaming)
+ *     description: Executes an MCP tool and streams the execution progress via Server-Sent Events
+ *     tags: [MCP]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Tool name to execute
+ *                 example: "get_stock_quote"
+ *               arguments:
+ *                 type: object
+ *                 description: Tool arguments
+ *                 example: {"symbols": "AAPL,GOOGL"}
+ *             required:
+ *               - name
+ *               - arguments
+ *     responses:
+ *       200:
+ *         description: Tool execution streaming response
+ *         content:
+ *           text/event-stream:
+ *             schema:
+ *               type: string
+ *               description: Server-Sent Events stream with execution progress
+ *       400:
+ *         description: Missing required fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Unknown tool
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Tool execution error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+
 // ============================================================================
 // Helper Functions
 // ============================================================================

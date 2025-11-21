@@ -25,7 +25,7 @@ import {
 
 /**
  * @swagger
- * /news_reader/{url}:
+ * /news-reader/{url}:
  *   get:
  *     summary: Extract article content from Yahoo Finance news
  *     description: Scrape and extract the main title and text content from a Yahoo Finance news article
