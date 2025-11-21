@@ -5,19 +5,20 @@
  */
 
 import { Router } from "express";
+
+import financialRoutes from "./financial";
 import healthRoutes from "./health";
-import quotesRoutes from "./quotes";
 import historyRoutes from "./history";
+import holdingsRoutes from "./holdings";
 import infoRoutes from "./info";
+import insightsRoutes from "./insights";
+import newsRoutes from "./news";
+import newsReaderRouter from "./newsReader";
+import quotesRoutes from "./quotes";
+import recommendationsRoutes from "./recommendations";
+import screenerRoutes from "./screener";
 import searchRoutes from "./search";
 import trendingRoutes from "./trending";
-import recommendationsRoutes from "./recommendations";
-import insightsRoutes from "./insights";
-import screenerRoutes from "./screener";
-import financialRoutes from "./financial";
-import newsRoutes from "./news";
-import holdingsRoutes from "./holdings";
-import newsReaderRouter from "./newsReader";
 
 const router = Router();
 

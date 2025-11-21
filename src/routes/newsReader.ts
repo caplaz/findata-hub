@@ -5,9 +5,14 @@
  */
 
 import { Router, Request, Response } from "express";
+
 import { cache, CACHE_ENABLED } from "../config/cache";
-import { log } from "../utils/logger";
 import type { ErrorResponse } from "../types";
+import { log } from "../utils/logger";
+import {
+  fetchArticleContent,
+  extractArticleContent,
+} from "../utils/newsScraper";
 
 const router = Router();
 
@@ -28,11 +33,6 @@ interface NewsReaderResponseBody {
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
-import {
-  fetchArticleContent,
-  extractArticleContent,
-} from "../utils/newsScraper";
 
 // ============================================================================
 // News Reader Endpoint

@@ -12,15 +12,8 @@
  */
 
 import express, { Request, Response } from "express";
-import yahooFinance from "../yahoo";
-import { log } from "../utils/logger";
-import { cache, CACHE_ENABLED } from "../config/cache";
-import {
-  fetchArticleContent,
-  extractArticleContent,
-} from "../utils/newsScraper";
 
-// Import types from centralized types file
+import { cache, CACHE_ENABLED } from "../config/cache";
 import type {
   QuoteSummaryResult,
   AssetProfile,
@@ -29,23 +22,21 @@ import type {
   TopHoldings,
   SearchResult,
   TrendingResult,
-  RecommendationsResult,
+  RecommendationsBySymbolResponse,
   ScreenerResult,
   ScreenerOptions,
   HistoricalResult,
   HistoricalOptions,
   QuoteResult,
   FundamentalRow,
-  FundamentalsResult
-} from '../types';
-
-
-
-
-
-
-
-
+  FundamentalsResult,
+} from "../types";
+import { log } from "../utils/logger";
+import {
+  fetchArticleContent,
+  extractArticleContent,
+} from "../utils/newsScraper";
+import yahooFinance from "../yahoo";
 
 const router = express.Router();
 
@@ -427,7 +418,9 @@ async function handleGetStockQuote(symbols) {
     const results = [];
     for (const symbol of symbolArray) {
       try {
-        const quote = (await yahooFinance.quote(symbol)) as unknown as QuoteResult;
+        const quote = (await yahooFinance.quote(
+          symbol
+        )) as unknown as QuoteResult;
         results.push({
           symbol,
           price: quote.regularMarketPrice,
@@ -519,7 +512,9 @@ async function handleGetCompanyInfo(symbols) {
           modules: ["assetProfile", "recommendationTrend", "financialData"],
         })) as unknown as QuoteSummaryResult;
 
-        const profile = (info.assetProfile || info.summaryProfile || {}) as AssetProfile;
+        const profile = (info.assetProfile ||
+          info.summaryProfile ||
+          {}) as AssetProfile;
         const financial = (info.financialData || {}) as FinancialData;
 
         results.push({
@@ -556,7 +551,9 @@ async function handleSearchSymbols(query) {
   try {
     log("debug", `MCP: Searching for "${query}"`);
 
-    const results = (await yahooFinance.search(query)) as unknown as SearchResult;
+    const results = (await yahooFinance.search(
+      query
+    )) as unknown as SearchResult;
     const formatted =
       results.quotes?.slice(0, 10).map((item) => ({
         symbol: item.symbol,
@@ -583,7 +580,9 @@ async function handleGetTrendingSymbols(region = "US") {
   try {
     log("debug", `MCP: Fetching trending symbols for ${region}`);
 
-    const trending = (await yahooFinance.trendingSymbols(region)) as unknown as TrendingResult;
+    const trending = (await yahooFinance.trendingSymbols(
+      region
+    )) as unknown as TrendingResult;
     const formatted =
       trending.quotes?.slice(0, 15).map((item) => ({
         symbol: item.symbol,
@@ -612,16 +611,18 @@ async function handleGetStockRecommendations(symbol) {
 
     const recommendations = (await yahooFinance.recommendationsBySymbol(
       symbol
-    )) as unknown as RecommendationsResult;
-    const formatted = (recommendations.recommendedSymbols || []).slice(0, 10).map((item) => ({
-      symbol: item.symbol,
-      name: item.shortname,
-      recommendationKey: item.recommendationKey,
-      recommendationScore: item.recommendationScore,
-      percentDowngrade: item.percentDowngrade,
-      percentHold: item.percentHold,
-      percentBuy: item.percentBuy,
-    }));
+    )) as unknown as RecommendationsBySymbolResponse;
+    const formatted = (recommendations.recommendedSymbols || [])
+      .slice(0, 10)
+      .map((item) => ({
+        symbol: item.symbol,
+        name: item.shortname,
+        recommendationKey: item.recommendationKey,
+        recommendationScore: item.recommendationScore,
+        percentDowngrade: item.percentDowngrade,
+        percentHold: item.percentHold,
+        percentBuy: item.percentBuy,
+      }));
 
     return {
       baseSymbol: symbol,
@@ -968,8 +969,10 @@ async function handleGetEtfHoldings(symbol) {
       modules: ["topHoldings", "fundProfile"],
     });
 
-    const holdings = (topHoldingsData.topHoldings || {}) as unknown as TopHoldings;
-    const profile = (topHoldingsData.fundProfile || {}) as unknown as FundProfile;
+    const holdings = (topHoldingsData.topHoldings ||
+      {}) as unknown as TopHoldings;
+    const profile = (topHoldingsData.fundProfile ||
+      {}) as unknown as FundProfile;
 
     const formatted = {
       symbol,

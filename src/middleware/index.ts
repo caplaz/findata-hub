@@ -3,8 +3,9 @@
  * Sets up rate limiting and other Express middleware
  */
 
-import rateLimit from "express-rate-limit";
 import { Request, Response } from "express";
+import rateLimit from "express-rate-limit";
+
 import { log } from "../utils/logger";
 
 /**

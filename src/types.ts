@@ -22,6 +22,7 @@ export type {
 } from "yahoo-finance2/esm/src/modules/quoteSummary-iface.js";
 
 export type { SearchResult } from "yahoo-finance2/esm/src/modules/search.js";
+export type { RecommendationsBySymbolResponse } from "yahoo-finance2/esm/src/modules/recommendationsBySymbol.js";
 
 // Import yahooFinance for utility types
 import yahooFinance from "./yahoo";
@@ -65,19 +66,6 @@ export interface Recommendation {
   percentDowngrade?: number;
   percentHold?: number;
   percentBuy?: number;
-  [key: string]: unknown;
-}
-
-/**
- * Array of recommendations
- */
-export interface RecommendationsResult {
-  symbol: string;
-  recommendedSymbols: Array<{
-    symbol: string;
-    score: number;
-    [key: string]: unknown;
-  }>;
   [key: string]: unknown;
 }
 

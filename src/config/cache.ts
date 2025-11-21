@@ -4,8 +4,8 @@
  * Supports multiple cache backends: NodeCache (in-memory), Memcached, or disabled
  */
 
-import NodeCache from "node-cache";
 import Memcached from "memcached";
+import NodeCache from "node-cache";
 
 /**
  * Cache mode constants

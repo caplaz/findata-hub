@@ -5,10 +5,11 @@
  */
 
 import { Router, Request, Response } from "express";
-import yahooFinance from "../yahoo";
+
 import { cache, CACHE_ENABLED } from "../config/cache";
+import type { RecommendationsBySymbolResponse, ErrorResponse } from "../types";
 import { log } from "../utils/logger";
-import type { RecommendationsResult, ErrorResponse } from "../types";
+import yahooFinance from "../yahoo";
 
 const router = Router();
 
@@ -19,8 +20,6 @@ const router = Router();
 interface RecommendationsRouteParams {
   symbol: string;
 }
-
-type RecommendationsResponseBody = RecommendationsResult;
 
 // ============================================================================
 // Recommendations Endpoint
@@ -62,7 +61,7 @@ router.get(
   "/:symbol",
   async (
     req: Request<RecommendationsRouteParams>,
-    res: Response<RecommendationsResponseBody | ErrorResponse>
+    res: Response<RecommendationsBySymbolResponse | ErrorResponse>
   ) => {
     const symbol = req.params.symbol.toUpperCase();
     const cacheKey = `recommendations:${symbol}`;
@@ -70,7 +69,7 @@ router.get(
     log("info", `Recommendations request for symbol: ${symbol} from ${req.ip}`);
 
     if (CACHE_ENABLED) {
-      const cached = await cache.get<RecommendationsResponseBody>(cacheKey);
+      const cached = await cache.get<RecommendationsBySymbolResponse>(cacheKey);
       if (cached) {
         log("debug", `Cache hit for recommendations: ${symbol}`);
         return res.json(cached);
@@ -82,13 +81,12 @@ router.get(
       const result = await yahooFinance.recommendationsBySymbol(symbol);
       log(
         "debug",
-        `Recommendations for ${symbol}: ${
-          result.recommendedSymbols?.length || 0
+        `Recommendations for ${symbol}: ${result.recommendedSymbols?.length || 0
         } symbols`
       );
 
       if (CACHE_ENABLED) {
-        await cache.set<RecommendationsResponseBody>(cacheKey, result);
+        await cache.set<RecommendationsBySymbolResponse>(cacheKey, result);
         log("debug", `Cached recommendations for ${symbol}`);
       }
 
@@ -96,8 +94,7 @@ router.get(
     } catch (err) {
       log(
         "error",
-        `Recommendations endpoint error for "${symbol}": ${
-          (err as Error).message
+        `Recommendations endpoint error for "${symbol}": ${(err as Error).message
         }`,
         err
       );

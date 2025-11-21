@@ -3,11 +3,14 @@
  * Handles article scraping from Yahoo Finance
  */
 
-import https from "https";
 import { IncomingHttpHeaders } from "http";
+import https from "https";
+
 import { load as cheerioLoad } from "cheerio";
-import { log } from "./logger";
+
 import type { NewsJson, StoryAtom } from "../types";
+
+import { log } from "./logger";
 
 
 /**

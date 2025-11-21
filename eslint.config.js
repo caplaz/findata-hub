@@ -1,6 +1,7 @@
 import js from "@eslint/js";
 import tseslint from "@typescript-eslint/eslint-plugin";
 import tsparser from "@typescript-eslint/parser";
+import importPlugin from "eslint-plugin-import";
 
 export default [
   js.configs.recommended,
@@ -28,8 +29,28 @@ export default [
     },
     plugins: {
       "@typescript-eslint": tseslint,
+      import: importPlugin,
     },
     rules: {
+      // Import sorting
+      "import/order": [
+        "error",
+        {
+          groups: [
+            "builtin",
+            "external",
+            "internal",
+            "parent",
+            "sibling",
+            "index",
+          ],
+          "newlines-between": "always",
+          alphabetize: {
+            order: "asc",
+            caseInsensitive: true,
+          },
+        },
+      ],
       // Allow console.log in development
       "no-console": "off",
       // Allow unused variables that start with underscore
