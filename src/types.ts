@@ -23,6 +23,15 @@ export type {
 
 export type { SearchResult } from "yahoo-finance2/esm/src/modules/search.js";
 export type { RecommendationsBySymbolResponse } from "yahoo-finance2/esm/src/modules/recommendationsBySymbol.js";
+export type {
+  ChartResultArray,
+  ChartOptions,
+} from "yahoo-finance2/esm/src/modules/chart.js";
+export type {
+  HistoricalHistoryResult,
+  HistoricalOptions,
+} from "yahoo-finance2/esm/src/modules/historical.js";
+export type { Quote } from "yahoo-finance2/esm/src/modules/quote";
 
 // Import yahooFinance for utility types
 import yahooFinance from "./yahoo";
@@ -30,9 +39,7 @@ import yahooFinance from "./yahoo";
 /**
  * Utility types derived from yahoo-finance2 function signatures
  */
-export type HistoricalOptions = Parameters<typeof yahooFinance.historical>[1];
 export type ScreenerOptions = Parameters<typeof yahooFinance.screener>[0];
-export type ChartOptions = Parameters<typeof yahooFinance.chart>[1];
 export type QuoteSummaryOptions = Parameters<
   typeof yahooFinance.quoteSummary
 >[1];
@@ -56,20 +63,6 @@ export interface TrendingResult {
 }
 
 /**
- * Single recommendation item
- */
-export interface Recommendation {
-  symbol: string;
-  shortname?: string;
-  recommendationKey?: string;
-  recommendationScore?: number;
-  percentDowngrade?: number;
-  percentHold?: number;
-  percentBuy?: number;
-  [key: string]: unknown;
-}
-
-/**
  * Screener result structure
  */
 export interface ScreenerResult {
@@ -81,59 +74,6 @@ export interface ScreenerResult {
     regularMarketChangePercent?: number;
     volume?: number;
     marketCap?: number;
-    [key: string]: unknown;
-  }>;
-  [key: string]: unknown;
-}
-
-/**
- * Single historical data row
- */
-export interface HistoricalRow {
-  date: Date;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-  adjclose?: number;
-  [key: string]: unknown;
-}
-
-/**
- * Array of historical data rows
- */
-export type HistoricalResult = HistoricalRow[];
-
-/**
- * Quote result structure
- */
-export interface QuoteResult {
-  regularMarketPrice?: number;
-  currency?: string;
-  regularMarketChange?: number;
-  regularMarketChangePercent?: number;
-  marketCap?: number;
-  trailingPE?: number;
-  trailingAnnualDividendRate?: number;
-  fiftyTwoWeekHigh?: number;
-  fiftyTwoWeekLow?: number;
-  averageVolume?: number;
-  [key: string]: unknown;
-}
-
-/**
- * Chart result structure
- */
-export interface ChartResult {
-  quotes: Array<{
-    date: Date;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-    volume: number;
-    adjclose?: number;
     [key: string]: unknown;
   }>;
   [key: string]: unknown;

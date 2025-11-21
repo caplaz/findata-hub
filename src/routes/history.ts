@@ -7,7 +7,7 @@
 import { Router, Request, Response } from "express";
 
 import { cache, CACHE_ENABLED } from "../config/cache";
-import type { ChartOptions, ChartResult, ErrorResponse } from "../types";
+import type { ChartOptions, ChartResultArray, ErrorResponse } from "../types";
 import { log } from "../utils/logger";
 import yahooFinance from "../yahoo";
 
@@ -28,7 +28,7 @@ interface HistoryQueryParams {
 
 type HistoryResponseBody = Record<
   string,
-  ChartResult["quotes"] | ErrorResponse
+  ChartResultArray["quotes"] | ErrorResponse
 >;
 
 // ============================================================================
@@ -183,7 +183,7 @@ router.get(
       results.forEach((result, index) => {
         const symbol = symbolList[index];
         if (result.status === "fulfilled") {
-          const value = result.value as unknown as ChartResult;
+          const value = result.value as unknown as ChartResultArray;
           data[symbol] = value.quotes;
           successCount++;
           log(
