@@ -55,7 +55,7 @@ router.get("/:symbol", async (req: Request, res: Response) => {
   log("info", `Insights request for symbol: ${symbol} from ${req.ip}`);
 
   if (CACHE_ENABLED) {
-    const cached = cache.get(cacheKey);
+    const cached = await cache.get(cacheKey);
     if (cached) {
       log("debug", `Cache hit for insights: ${symbol}`);
       return res.json(cached);
@@ -68,7 +68,7 @@ router.get("/:symbol", async (req: Request, res: Response) => {
     log("debug", `Insights retrieved for ${symbol}`);
 
     if (CACHE_ENABLED) {
-      cache.set(cacheKey, result);
+      await cache.set(cacheKey, result);
       log("debug", `Cached insights for ${symbol}`);
     }
 

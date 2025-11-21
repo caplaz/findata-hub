@@ -82,7 +82,7 @@ router.get("/:symbols", async (req: Request, res: Response) => {
   );
 
   if (CACHE_ENABLED) {
-    const cached = cache.get(cacheKey);
+    const cached = await cache.get(cacheKey);
     if (cached) {
       log("debug", `Cache hit for history: ${symbols} (${period}/${interval})`);
       return res.json(cached);
@@ -179,7 +179,7 @@ router.get("/:symbols", async (req: Request, res: Response) => {
     );
 
     if (CACHE_ENABLED) {
-      cache.set(cacheKey, data);
+      await cache.set(cacheKey, data);
       log(
         "debug",
         `Cached history data for ${symbols} (${period}/${interval})`

@@ -94,7 +94,7 @@ router.get("/*", async (req: Request, res: Response) => {
   log("info", `News reader request for ${url} from ${req.ip}`);
 
   if (CACHE_ENABLED) {
-    const cached = cache.get(cacheKey);
+    const cached = await cache.get(cacheKey);
     if (cached) {
       log("debug", `Cache hit for news reader: ${url}`);
       return res.json(cached);
@@ -156,12 +156,12 @@ router.get("/*", async (req: Request, res: Response) => {
     };
 
     if (CACHE_ENABLED) {
-      cache.set(cacheKey, result);
+      await cache.set(cacheKey, result);
       log("debug", `Cached article content for ${finalUrl}`);
       // Also cache under final URL if it was redirected
       if (finalUrl !== url) {
         const finalCacheKey = `news_reader:${finalUrl}`;
-        cache.set(finalCacheKey, result);
+        await cache.set(finalCacheKey, result);
         log("debug", `Also cached under final URL: ${finalUrl}`);
       }
     }

@@ -105,7 +105,7 @@ router.get("/:symbol/:type", async (req: Request, res: Response) => {
   }
 
   if (CACHE_ENABLED) {
-    const cached = cache.get(cacheKey);
+    const cached = await cache.get(cacheKey);
     if (cached) {
       log("debug", `Cache hit for financial: ${symbol}:${type}`);
       return res.json(cached);
@@ -141,7 +141,7 @@ router.get("/:symbol/:type", async (req: Request, res: Response) => {
     log("debug", `Financial data retrieved for ${symbol}: ${type} (${period})`);
 
     if (CACHE_ENABLED) {
-      cache.set(cacheKey, response);
+      await cache.set(cacheKey, response);
       log("debug", `Cached financial data for ${symbol}:${type}`);
     }
 
@@ -199,7 +199,7 @@ router.get("/:symbol/ratios", async (req: Request, res: Response) => {
   log("info", `Financial ratios request for ${symbol} from ${req.ip}`);
 
   if (CACHE_ENABLED) {
-    const cached = cache.get(cacheKey);
+    const cached = await cache.get(cacheKey);
     if (cached) {
       log("debug", `Cache hit for financial ratios: ${symbol}`);
       return res.json(cached);
@@ -215,7 +215,7 @@ router.get("/:symbol/ratios", async (req: Request, res: Response) => {
     log("debug", `Financial ratios retrieved for ${symbol}`);
 
     if (CACHE_ENABLED) {
-      cache.set(cacheKey, result);
+      await cache.set(cacheKey, result);
       log("debug", `Cached financial ratios for ${symbol}`);
     }
 

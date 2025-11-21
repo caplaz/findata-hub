@@ -69,7 +69,7 @@ router.get("/:symbol", async (req: Request, res: Response) => {
   log("info", `ETF holdings request for ${symbol} from ${req.ip}`);
 
   if (CACHE_ENABLED) {
-    const cached = cache.get(cacheKey);
+    const cached = await cache.get(cacheKey);
     if (cached) {
       log("debug", `Cache hit for holdings: ${symbol}`);
       return res.json(cached);
@@ -114,7 +114,7 @@ router.get("/:symbol", async (req: Request, res: Response) => {
     log("debug", `ETF holdings retrieved for ${symbol}`);
 
     if (CACHE_ENABLED) {
-      cache.set(cacheKey, result);
+      await cache.set(cacheKey, result);
       log("debug", `Cached holdings for ${symbol}`);
     }
 
@@ -172,7 +172,7 @@ router.get("/:symbol/fund", async (req: Request, res: Response) => {
   log("info", `Mutual fund holdings request for ${symbol} from ${req.ip}`);
 
   if (CACHE_ENABLED) {
-    const cached = cache.get(cacheKey);
+    const cached = await cache.get(cacheKey);
     if (cached) {
       log("debug", `Cache hit for fund holdings: ${symbol}`);
       return res.json(cached);
@@ -188,7 +188,7 @@ router.get("/:symbol/fund", async (req: Request, res: Response) => {
     log("debug", `Mutual fund holdings retrieved for ${symbol}`);
 
     if (CACHE_ENABLED) {
-      cache.set(cacheKey, result);
+      await cache.set(cacheKey, result);
       log("debug", `Cached fund holdings for ${symbol}`);
     }
 

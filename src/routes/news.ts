@@ -63,7 +63,7 @@ router.get("/:symbol", async (req: Request, res: Response) => {
   log("info", `News request for ${symbol}, count: ${count} from ${req.ip}`);
 
   if (CACHE_ENABLED) {
-    const cached = cache.get(cacheKey);
+    const cached = await cache.get(cacheKey);
     if (cached) {
       log("debug", `Cache hit for news: ${symbol}`);
       return res.json(cached);
@@ -122,7 +122,7 @@ router.get("/:symbol", async (req: Request, res: Response) => {
     };
 
     if (CACHE_ENABLED) {
-      cache.set(cacheKey, response);
+      await cache.set(cacheKey, response);
       log("debug", `Cached news context for ${symbol}`);
     }
 
@@ -177,7 +177,7 @@ router.get("/", async (req: Request, res: Response) => {
   log("info", `General news request, count: ${count} from ${req.ip}`);
 
   if (CACHE_ENABLED) {
-    const cached = cache.get(cacheKey);
+    const cached = await cache.get(cacheKey);
     if (cached) {
       log("debug", `Cache hit for general news`);
       return res.json(cached);
@@ -213,7 +213,7 @@ router.get("/", async (req: Request, res: Response) => {
     };
 
     if (CACHE_ENABLED) {
-      cache.set(cacheKey, response);
+      await cache.set(cacheKey, response);
       log("debug", `Cached general news`);
     }
 

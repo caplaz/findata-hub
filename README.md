@@ -342,15 +342,16 @@ Test coverage includes:
 
 Configure the server using environment variables:
 
-| Variable               | Default               | Description                             |
-| ---------------------- | --------------------- | --------------------------------------- |
-| `PORT`                 | 3000                  | Server port                             |
-| `LOG_LEVEL`            | info                  | Logging level: error, warn, info, debug |
-| `CACHE_ENABLED`        | true                  | Enable response caching                 |
-| `CACHE_TTL`            | 300                   | Cache TTL in seconds (5 minutes)        |
-| `RATE_LIMIT_WINDOW_MS` | 900000                | Rate limit window in ms (15 minutes)    |
-| `RATE_LIMIT_MAX`       | 100                   | Max requests per window per IP          |
-| `SWAGGER_SERVER_URL`   | http://localhost:3000 | Base URL for Swagger API documentation  |
+| Variable               | Default               | Description                               |
+| ---------------------- | --------------------- | ----------------------------------------- |
+| `PORT`                 | 3000                  | Server port                               |
+| `LOG_LEVEL`            | info                  | Logging level: error, warn, info, debug   |
+| `CACHE_MODE`           | nodecache             | Cache backend: nodecache, memcached, none |
+| `CACHE_HOST`           | localhost:11211       | Memcached host:port (for memcached mode)  |
+| `CACHE_TTL`            | 300                   | Cache TTL in seconds (5 minutes)          |
+| `RATE_LIMIT_WINDOW_MS` | 900000                | Rate limit window in ms (15 minutes)      |
+| `RATE_LIMIT_MAX`       | 100                   | Max requests per window per IP            |
+| `SWAGGER_SERVER_URL`   | http://localhost:3000 | Base URL for Swagger API documentation    |
 
 **Examples:**
 
@@ -362,10 +363,16 @@ LOG_LEVEL=debug npm start
 RATE_LIMIT_MAX=200 RATE_LIMIT_WINDOW_MS=600000 npm start
 
 # Run with cache disabled
-CACHE_ENABLED=false npm start
+CACHE_MODE=none npm start
+
+# Run with memcached (default host)
+CACHE_MODE=memcached npm start
+
+# Run with custom memcached host
+CACHE_MODE=memcached CACHE_HOST=memcached-server:11211 npm start
 
 # Run on custom port with all custom settings
-PORT=8080 LOG_LEVEL=debug RATE_LIMIT_MAX=50 npm start
+PORT=8080 LOG_LEVEL=debug CACHE_MODE=nodecache CACHE_TTL=600 npm start
 
 # Run in Docker container (Docker Desktop)
 SWAGGER_SERVER_URL=http://host.docker.internal:3000 npm start
@@ -1185,7 +1192,13 @@ Requests are limited to prevent abuse. Defaults to 100 requests per 15 minutes p
 
 ## Caching
 
-API responses are cached in memory to reduce external API calls. Defaults to 5 minutes TTL. Configurable via `CACHE_ENABLED` and `CACHE_TTL` environment variables.
+API responses are cached to improve performance and reduce external API calls. The server supports multiple cache backends:
+
+- **nodecache** (default): In-memory caching using NodeCache
+- **memcached**: Distributed caching using Memcached server
+- **none**: Disable caching entirely
+
+Configure via `CACHE_MODE`, `CACHE_HOST`, and `CACHE_TTL` environment variables. Defaults to NodeCache with 5 minutes TTL.
 
 ## Error Handling
 

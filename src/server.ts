@@ -126,7 +126,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   // Log startup configuration
   log("info", `Server starting with configuration:`, {
     logLevel: process.env.LOG_LEVEL || "info",
-    cacheEnabled: process.env.CACHE_ENABLED !== "false",
+    cacheMode: process.env.CACHE_MODE || "nodecache",
+    cacheHost: process.env.CACHE_HOST || "localhost:11211",
     cacheTTL: parseInt(process.env.CACHE_TTL || "300"),
     rateLimitWindow: parseInt(process.env.RATE_LIMIT_WINDOW_MS || "900000"),
     rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX || "100"),

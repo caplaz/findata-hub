@@ -68,7 +68,7 @@ router.get("/:type", async (req: Request, res: Response) => {
   );
 
   if (CACHE_ENABLED) {
-    const cached = cache.get(cacheKey);
+    const cached = await cache.get(cacheKey);
     if (cached) {
       log("debug", `Cache hit for screener: ${type}`);
       return res.json(cached);
@@ -105,7 +105,7 @@ router.get("/:type", async (req: Request, res: Response) => {
     );
 
     if (CACHE_ENABLED) {
-      cache.set(cacheKey, result);
+      await cache.set(cacheKey, result);
       log("debug", `Cached screener results for ${type}`);
     }
 
