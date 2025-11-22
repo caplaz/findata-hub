@@ -1,3 +1,6 @@
+# Docker Compose configuration for Yahoo Finance Server
+# Provides a simple development setup with volume mounting for live reloading
+
 version: "3.8"
 
 services:

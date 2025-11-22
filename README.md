@@ -7,7 +7,7 @@
 [![GitHub Issues](https://img.shields.io/github/issues/acerbetti/yahoo-finance-server.svg)](https://github.com/acerbetti/yahoo-finance-server/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/acerbetti/yahoo-finance-server.svg)](https://github.com/acerbetti/yahoo-finance-server/stargazers)
 
-A comprehensive Node.js Express API server that serves Yahoo Finance data using the yahoo-finance2 v3.0.0 library. Features 11 REST endpoints for financial data, 11 MCP (Model Context Protocol) tools for LLM integration, and supports multiple tickers in a single request with arrays as results and partial failure handling.
+A comprehensive Node.js Express API server that serves Yahoo Finance data using the yahoo-finance2 v3.10.2 library. Features 13 REST endpoints for financial data, 14 MCP (Model Context Protocol) tools for LLM integration, and supports multiple tickers in a single request with arrays as results and partial failure handling.
 
 ## ⚠️ Disclaimer
 
@@ -19,17 +19,17 @@ Special thanks to the authors and maintainers of the [yahoo-finance2](https://gi
 
 ## Features
 
-- **12 REST API Endpoints** for stock quotes, history, company info, search, trending, recommendations, insights, screeners, performance analysis, financial statements, news, holdings, and article content extraction
+- **13 REST API Endpoints** for stock quotes, history, company info, search, trending, recommendations, insights, screeners, performance analysis, financial statements, news, holdings, and article content extraction
 - **14 MCP Tools** (Model Context Protocol) for LLM integration via HTTP + SSE streaming - see [MCP.md](./MCP.md) for detailed documentation
 - **OpenAPI Client Compatibility** - Full support for OpenAI function calling format via `?format=openai`
 - **CORS Support** - Cross-origin resource sharing enabled for web applications
-- Multi-ticker support for all endpoints with partial failure handling
+- Multi-ticker support for quotes and historical data endpoints with partial failure handling
 - Response caching with configurable TTL
 - Rate limiting per IP address
 - Comprehensive API logging with configurable levels (`error`, `warn`, `info`, `debug`)
 - Docker multi-stage build with multi-architecture support (AMD64, ARM64, ARMv7)
 - Health checks and proper error handling
-- Jest tests with comprehensive coverage (150 tests across 21 test suites)
+- Jest tests with comprehensive coverage (241 tests across 21 test suites)
 - **Interactive API Documentation** at `/api-docs` (Swagger UI)
 - **OpenAPI JSON Specification** at `/api-docs.json`
 - **Modular architecture** with separated concerns
@@ -333,7 +333,7 @@ This runs the Jest test suite covering:
 
 Test coverage includes:
 
-- 150 test cases across 21 test files
+- 241 test cases across 21 test files
 - Unit tests for each module
 - Integration tests for API endpoints
 - Configuration validation tests
@@ -811,7 +811,7 @@ Get stock screener results for different categories.
 
 **Parameters:**
 
-- `type`: Screener type (`day_gainers`, `day_losers`, `most_actives`, `most_shorted`)
+- `type`: Screener type (`day_gainers`, `day_losers`, `most_actives`)
 - `count` (optional): Number of results (default: 25)
 
 **Response:** Screener results with stock quotes.
@@ -1041,9 +1041,99 @@ curl "http://localhost:3000/news-reader/https://finance.yahoo.com/news/bitcoin-p
 curl "http://localhost:3000/news-reader/https://finance.yahoo.com/m/f2290ae0-0782-32e2-94c1-0614377f3478/amazon-ford-partner-on-used.html"
 ```
 
+## MCP Endpoints
+
+The server includes MCP (Model Context Protocol) endpoints for LLM integration.
+
+### GET /mcp/health
+
+Get MCP server health and tool information.
+
+**Response:**
+
+```json
+{
+  "status": "healthy",
+  "service": "MCP Server",
+  "version": "1.0.0",
+  "toolsAvailable": 14,
+  "tools": ["get_stock_quote", "get_stock_history", ...],
+  "features": ["json-response", "sse-streaming"],
+  "timestamp": "2025-11-22T15:39:20.992Z"
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:3000/mcp/health
+```
+
+### GET /mcp/tools
+
+List all available MCP tools with their schemas.
+
+**Query Parameters:**
+
+- `format` (optional): Response format (`standard` or `openai`) - default: `standard`
+
+**Response:** Array of tool definitions with names, descriptions, and input schemas.
+
+**Example:**
+
+```bash
+curl http://localhost:3000/mcp/tools
+curl "http://localhost:3000/mcp/tools?format=openai"
+```
+
+### POST /mcp/call
+
+Execute an MCP tool and receive JSON response.
+
+**Request Body:**
+
+```json
+{
+  "name": "tool_name",
+  "arguments": { ...tool arguments... }
+}
+```
+
+**Response:** Tool execution result wrapped in MCP content format.
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:3000/mcp/call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "get_stock_quote",
+    "arguments": {"symbols": "AAPL"}
+  }'
+```
+
+### POST /mcp/call-stream
+
+Execute an MCP tool with Server-Sent Events streaming.
+
+**Request Body:** Same as `/mcp/call`
+
+**Response:** Server-Sent Events stream with execution progress and results.
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:3000/mcp/call-stream \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "get_stock_quote",
+    "arguments": {"symbols": "AAPL"}
+  }'
+```
+
 ## MCP (Model Context Protocol) Integration
 
-The server includes a comprehensive MCP implementation with **11 financial data tools** accessible via HTTP endpoints and Server-Sent Events (SSE) streaming. This enables seamless integration with LLM systems like Claude for intelligent financial analysis and data retrieval.
+The server includes a comprehensive MCP implementation with **14 financial data tools** accessible via HTTP endpoints and Server-Sent Events (SSE) streaming. This enables seamless integration with LLM systems like Claude for intelligent financial analysis and data retrieval.
 
 **Quick Start:**
 
@@ -1124,82 +1214,6 @@ Requests are limited to prevent abuse. Defaults to 100 requests per 15 minutes p
 
 Responses are cached to improve performance. Cache is enabled by default with a 5-minute TTL. Configure via `CACHE_ENABLED` and `CACHE_TTL` environment variables.
 
-## Setup
-
-### Local Development
-
-1. Install dependencies:
-
-```bash
-npm install
-```
-
-2. Run in development mode:
-
-```bash
-npm run dev
-```
-
-3. Run tests:
-
-```bash
-npm test
-```
-
-### Docker
-
-1. Build and run with Docker Compose:
-
-```bash
-docker-compose up --build
-```
-
-The server will be available at http://localhost:3000.
-
-### GitHub Packages
-
-Pre-built Docker images are available on GitHub Packages for multiple architectures (AMD64, ARM64, ARMv7):
-
-```bash
-# Pull the latest image (automatically selects your architecture)
-docker pull ghcr.io/acerbetti/yahoo-finance-server:latest
-
-# Or pull a specific version
-docker pull ghcr.io/acerbetti/yahoo-finance-server:v1.0.0
-
-# Run the container
-docker run -p 3000:3000 ghcr.io/acerbetti/yahoo-finance-server:latest
-```
-
-**Supported Platforms:**
-
-- `linux/amd64` (Intel/AMD 64-bit)
-- `linux/arm64` (ARM 64-bit, e.g., Apple Silicon, Raspberry Pi 4+)
-- `linux/arm/v7` (ARM 32-bit v7, e.g., Raspberry Pi 3 and older)
-
-## Environment Variables
-
-- `PORT`: Server port (default: 3000)
-- `LOG_LEVEL`: Logging verbosity level - `error`, `warn`, `info`, `debug` (default: `info`)
-- `RATE_LIMIT_WINDOW_MS`: Rate limit window in milliseconds (default: 900000, i.e., 15 minutes)
-- `RATE_LIMIT_MAX`: Maximum requests per window per IP (default: 100)
-- `CACHE_ENABLED`: Enable caching (default: true, set to 'false' to disable)
-- `CACHE_TTL`: Cache TTL in seconds (default: 300, i.e., 5 minutes)
-
-## Rate Limiting
-
-Requests are limited to prevent abuse. Defaults to 100 requests per 15 minutes per IP address. Configurable via `RATE_LIMIT_WINDOW_MS` and `RATE_LIMIT_MAX` environment variables.
-
-## Caching
-
-API responses are cached to improve performance and reduce external API calls. The server supports multiple cache backends:
-
-- **nodecache** (default): In-memory caching using NodeCache
-- **memcached**: Distributed caching using Memcached server
-- **none**: Disable caching entirely
-
-Configure via `CACHE_MODE`, `CACHE_HOST`, and `CACHE_TTL` environment variables. Defaults to NodeCache with 5 minutes TTL.
-
 ## Error Handling
 
 - Invalid symbols return null in arrays for multi-ticker requests.
@@ -1225,7 +1239,7 @@ git push origin v1.0.0
 The CI/CD pipeline will automatically:
 
 - Run tests
-- Build and push Docker images to Docker Hub
+- Build and push Docker images to GitHub Packages
 - Create a GitHub release
 
 ## Changelog

@@ -1,3 +1,9 @@
+/**
+ * MCP integration tests
+ * Comprehensive tests for MCP (Model Context Protocol) endpoints and tool execution
+ * @module tests/mcp.integration.test
+ */
+
 import request from "supertest";
 import { jest } from "@jest/globals";
 

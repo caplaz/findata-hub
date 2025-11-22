@@ -10,7 +10,7 @@
 
 The MCP server extends the Yahoo Finance API with a protocol-compliant interface optimized for Large Language Models (LLMs). It provides:
 
-- **11 Financial Data Tools**: Stock quotes, history, company info, search, trending, recommendations, insights, screeners, performance analysis, financial statements, and news
+- **14 Financial Data Tools**: Stock quotes, history, company info, search, trending, recommendations, insights, screeners, performance analysis, financial statements, news, ETF holdings, fund holdings, and news article extraction
 - **HTTP-based Access**: RESTful endpoints for tool discovery and execution
 - **Server-Sent Events (SSE)**: Streaming responses for long-running operations
 - **MCP Compliance**: Schema definitions compatible with MCP clients
@@ -263,6 +263,36 @@ Get latest news articles and headlines for a stock.
 - `count` (number): Number of articles to return (default: 10, max: 50)
 
 **Returns:** News articles with title, description, source, published date, and thumbnail.
+
+### 12. `get_etf_holdings`
+
+Get ETF holdings and sector weightings.
+
+**Arguments:**
+
+- `symbol` (string, required): ETF ticker symbol (e.g., SPY, QQQ)
+
+**Returns:** ETF holdings data including top positions, sector allocations, and fund information. Falls back to basic ETF information if detailed holdings are unavailable.
+
+### 13. `get_fund_holdings`
+
+Get mutual fund holdings and composition.
+
+**Arguments:**
+
+- `symbol` (string, required): Mutual fund ticker symbol
+
+**Returns:** Mutual fund holdings data including top positions and fund profile information.
+
+### 14. `read_news_article`
+
+Extract content from Yahoo Finance news articles.
+
+**Arguments:**
+
+- `url` (string, required): Full Yahoo Finance article URL
+
+**Returns:** Article title, content, and source URL extracted from the news article.
 
 ## Usage Examples
 

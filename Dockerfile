@@ -1,3 +1,6 @@
+# Yahoo Finance Server Dockerfile
+# Multi-stage build for optimized production image
+
 # Multi-stage build for production
 FROM node:22-alpine AS builder
 

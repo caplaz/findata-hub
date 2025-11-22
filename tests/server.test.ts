@@ -1,3 +1,9 @@
+/**
+ * Server integration tests
+ * Tests the main Express application and health endpoints
+ * @module tests/server.test
+ */
+
 import { jest } from "@jest/globals";
 
 // Mock the yahoo-finance2 module before importing app
