@@ -29,8 +29,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Copy node_modules from builder (only production dependencies)
-COPY --from=builder /app/node_modules ./node_modules
+# Install only production dependencies
+RUN npm ci --only=production && npm cache clean --force
 
 # Copy built application
 COPY --from=builder /app/dist ./dist

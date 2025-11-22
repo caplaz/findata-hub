@@ -152,25 +152,30 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     }
     log("info", `💰 Finance API endpoints:`);
     log("info", `   GET /health - Health check`);
-    log("info", `   GET /quote/:symbols - Stock quotes`);
+    log("info", `   GET /quote/:symbols - Stock quotes (comma-separated)`);
     log("info", `   GET /history/:symbols - Historical data`);
-    log("info", `   GET /info/:symbols - Company information`);
     log("info", `   GET /search/:query - Search symbols and news`);
     log("info", `   GET /trending/:region - Trending symbols by region`);
     log(
       "info",
       `   GET /recommendations/:symbol - Similar stock recommendations`
     );
-    log("info", `   GET /insights/:symbol - Comprehensive stock insights`);
     log(
       "info",
       `   GET /screener/:type - Stock screeners (gainers, losers, etc.)`
     );
+    log("info", `   GET /news - General market news`);
+    log("info", `   GET /news-reader - Additional news functionality`);
+    log("info", `   GET /ticket/:ticket - Company information`);
     log(
       "info",
-      `   GET /financial/:symbol/:type - Financial statements (income, balance, cashflow)`
+      `   GET /ticket/:ticket/insights - Comprehensive stock insights`
     );
-    log("info", `   GET /news/:symbol - Company news and market context`);
+    log("info", `   GET /ticket/:ticket/news - Company-specific news`);
+    log(
+      "info",
+      `   GET /ticket/:ticket/:type - Financial statements (income/balance/cashflow)`
+    );
     log("info", `\n🤖 MCP (Model Context Protocol) Endpoints:`);
     log("info", `   GET /mcp/health - MCP server health & tools info`);
     log("info", `   GET /mcp/tools - List all available MCP tools`);
