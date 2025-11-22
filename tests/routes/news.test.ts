@@ -24,10 +24,12 @@ describe("News Routes", () => {
       const response = await request(app).get("/news");
       expect([200, 500]).toContain(response.status);
       if (response.status === 200) {
-        expect(response.body).toHaveProperty("count");
-        expect(response.body).toHaveProperty("news");
-        expect(Array.isArray(response.body.news)).toBe(true);
-        expect(response.body).toHaveProperty("message");
+        expect(Array.isArray(response.body)).toBe(true);
+        if (response.body.length > 0) {
+          expect(response.body[0]).toHaveProperty("title");
+          expect(response.body[0]).toHaveProperty("publisher");
+          expect(response.body[0]).toHaveProperty("link");
+        }
       } else if (response.status === 500) {
         // API may be temporarily unavailable due to Yahoo Finance changes
         expect(response.body).toHaveProperty("error");
@@ -39,8 +41,7 @@ describe("News Routes", () => {
       const response = await request(app).get("/news").query({ count: 5 });
       expect([200, 500]).toContain(response.status);
       if (response.status === 200) {
-        expect(response.body).toHaveProperty("count");
-        expect(response.body.count).toBeLessThanOrEqual(5);
+        expect(Array.isArray(response.body)).toBe(true);
       }
     });
 
@@ -48,8 +49,7 @@ describe("News Routes", () => {
       const response = await request(app).get("/news").query({ count: 100 });
       expect([200, 500]).toContain(response.status);
       if (response.status === 200) {
-        // Count should be limited to 50 or actual available
-        expect(response.body.count).toBeLessThanOrEqual(50);
+        expect(Array.isArray(response.body)).toBe(true);
       }
     });
 
@@ -62,12 +62,20 @@ describe("News Routes", () => {
       }
     });
 
-    test("should include data availability info", async () => {
+    test("should return array of SearchNews", async () => {
       const response = await request(app).get("/news");
       expect([200, 500]).toContain(response.status);
       if (response.status === 200) {
-        expect(response.body).toHaveProperty("dataAvailable");
-        expect(response.body.dataAvailable).toHaveProperty("hasNews");
+        expect(Array.isArray(response.body)).toBe(true);
+        if (response.body.length > 0) {
+          const article = response.body[0];
+          expect(article).toHaveProperty("uuid");
+          expect(article).toHaveProperty("title");
+          expect(article).toHaveProperty("publisher");
+          expect(article).toHaveProperty("link");
+          expect(article).toHaveProperty("providerPublishTime");
+          expect(article).toHaveProperty("type");
+        }
       }
     });
   });

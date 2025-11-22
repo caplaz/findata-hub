@@ -164,9 +164,12 @@ describe("Ticket Routes", () => {
 
       expect([200, 500]).toContain(res.status);
       if (res.status === 200) {
-        expect(res.body).toHaveProperty("symbol");
-        expect(res.body).toHaveProperty("news");
-        expect(res.body).toHaveProperty("count");
+        expect(Array.isArray(res.body)).toBe(true);
+        if (res.body.length > 0) {
+          expect(res.body[0]).toHaveProperty("title");
+          expect(res.body[0]).toHaveProperty("publisher");
+          expect(res.body[0]).toHaveProperty("link");
+        }
       }
     });
 
@@ -175,7 +178,7 @@ describe("Ticket Routes", () => {
 
       expect([200, 500]).toContain(res.status);
       if (res.status === 200) {
-        expect(res.body.symbol).toBe("AAPL");
+        expect(Array.isArray(res.body)).toBe(true);
       }
     });
 
@@ -185,6 +188,9 @@ describe("Ticket Routes", () => {
         .query({ count: 5 });
 
       expect([200, 500]).toContain(res.status);
+      if (res.status === 200) {
+        expect(Array.isArray(res.body)).toBe(true);
+      }
     });
 
     test("should limit count to 50", async () => {
@@ -194,7 +200,8 @@ describe("Ticket Routes", () => {
 
       expect([200, 500]).toContain(res.status);
       if (res.status === 200) {
-        expect(res.body.count).toBeLessThanOrEqual(50);
+        expect(Array.isArray(res.body)).toBe(true);
+        expect(res.body.length).toBeLessThanOrEqual(50);
       }
     });
 
@@ -203,53 +210,25 @@ describe("Ticket Routes", () => {
 
       expect([200, 500]).toContain(res.status);
       if (res.status === 200) {
-        expect(res.body).toHaveProperty("count");
+        expect(Array.isArray(res.body)).toBe(true);
       }
     });
 
-    test("should include company info when available", async () => {
+    test("should return array of SearchNews", async () => {
       const res = await request(app).get("/ticket/AAPL/news");
 
       expect([200, 500]).toContain(res.status);
       if (res.status === 200) {
-        // companyInfo is optional - if present, should have valid structure
-        if (res.body.companyInfo) {
-          expect(typeof res.body.companyInfo).toBe("object");
+        expect(Array.isArray(res.body)).toBe(true);
+        if (res.body.length > 0) {
+          const article = res.body[0];
+          expect(article).toHaveProperty("uuid");
+          expect(article).toHaveProperty("title");
+          expect(article).toHaveProperty("publisher");
+          expect(article).toHaveProperty("link");
+          expect(article).toHaveProperty("providerPublishTime");
+          expect(article).toHaveProperty("type");
         }
-      }
-    });
-
-    test("should include summary info when available", async () => {
-      const res = await request(app).get("/ticket/AAPL/news");
-
-      expect([200, 500]).toContain(res.status);
-      if (res.status === 200) {
-        // summaryInfo is optional - if present, should have valid structure
-        if (res.body.summaryInfo) {
-          expect(typeof res.body.summaryInfo).toBe("object");
-        }
-      }
-    });
-
-    test("should include data availability flags", async () => {
-      const res = await request(app).get("/ticket/AAPL/news");
-
-      expect([200, 500]).toContain(res.status);
-      if (res.status === 200) {
-        expect(res.body).toHaveProperty("dataAvailable");
-        expect(res.body.dataAvailable).toHaveProperty("hasAssetProfile");
-        expect(res.body.dataAvailable).toHaveProperty("hasSummaryProfile");
-        expect(res.body.dataAvailable).toHaveProperty("hasNews");
-      }
-    });
-
-    test("should provide appropriate message", async () => {
-      const res = await request(app).get("/ticket/AAPL/news");
-
-      expect([200, 500]).toContain(res.status);
-      if (res.status === 200) {
-        expect(res.body).toHaveProperty("message");
-        expect(typeof res.body.message).toBe("string");
       }
     });
 
@@ -259,6 +238,12 @@ describe("Ticket Routes", () => {
 
       expect([200, 500]).toContain(res1.status);
       expect([200, 500]).toContain(res2.status);
+      if (res1.status === 200) {
+        expect(Array.isArray(res1.body)).toBe(true);
+      }
+      if (res2.status === 200) {
+        expect(Array.isArray(res2.body)).toBe(true);
+      }
     });
   });
 

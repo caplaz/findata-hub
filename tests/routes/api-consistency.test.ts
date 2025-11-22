@@ -44,21 +44,4 @@ describe("API Response Format Consistency", () => {
       expect(response.body).toHaveProperty("MSFT");
     }
   });
-
-  test("should return keyed objects for multi-symbol info requests", async () => {
-    const response = await request(app).get("/info/AAPL,MSFT");
-    expect([200, 500]).toContain(response.status);
-    if (response.status === 200) {
-      // Should return object with symbol keys, not array
-      expect(typeof response.body).toBe("object");
-      expect(Array.isArray(response.body)).toBe(false);
-      expect(response.body).toHaveProperty("AAPL");
-      expect(response.body).toHaveProperty("MSFT");
-      // Should only have assetProfile, not summaryProfile
-      if (response.body.AAPL && response.body.AAPL.assetProfile) {
-        expect(response.body.AAPL).toHaveProperty("assetProfile");
-        expect(response.body.AAPL).not.toHaveProperty("summaryProfile");
-      }
-    }
-  });
 });

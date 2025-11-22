@@ -7,7 +7,7 @@
 import { Router, Request, Response } from "express";
 
 import { cache, CACHE_ENABLED } from "../config/cache";
-import type { QuoteSummaryResult, ErrorResponse } from "../types";
+import type { QuoteSummaryResult, ErrorResponse, SearchNews } from "../types";
 import { log } from "../utils/logger";
 import yahooFinance from "../yahoo";
 
@@ -182,41 +182,12 @@ async function getTicketInsights(ticket: string): Promise<QuoteSummaryResult> {
 async function getTicketNews(
   ticket: string,
   count: number = 10
-): Promise<{
-  symbol: string;
-  count: number;
-  news: Array<{
-    title: string;
-    publisher: string;
-    link: string;
-    publishedAt?: Date | number;
-    type?: string;
-    relatedTickers?: string[];
-  }>;
-  companyInfo?: {
-    longName?: string;
-    sector?: string;
-    industry?: string;
-    website?: string;
-  };
-  summaryInfo?: {
-    previousClose?: number;
-    marketCap?: number;
-    trailingPE?: number;
-    forwardPE?: number;
-  };
-  message: string;
-  dataAvailable: {
-    hasAssetProfile?: boolean;
-    hasSummaryProfile?: boolean;
-    hasNews: boolean;
-  };
-}> {
+): Promise<SearchNews[]> {
   const limitedCount = Math.min(count || 10, 50);
   const cacheKey = `ticket:news:${ticket}:${limitedCount}`;
 
   if (CACHE_ENABLED) {
-    const cached = await cache.get<ReturnType<typeof getTicketNews>>(cacheKey);
+    const cached = await cache.get<SearchNews[]>(cacheKey);
     if (cached) {
       log("debug", `Cache hit for ticket news: ${ticket}`);
       return cached;
@@ -229,106 +200,10 @@ async function getTicketNews(
     newsCount: limitedCount,
   });
 
-  interface SearchArticle {
-    title: string;
-    publisher: string;
-    link: string;
-    providerPublishTime?: Date | number;
-    type?: string;
-    relatedTickers?: string[];
-  }
-
-  const newsArticles =
-    searchResult.news?.map((article: SearchArticle) => ({
-      title: article.title,
-      publisher: article.publisher,
-      link: article.link,
-      publishedAt: article.providerPublishTime,
-      type: article.type,
-      relatedTickers: article.relatedTickers,
-    })) || [];
-
-  let assetProfile: unknown;
-  let summaryProfile: unknown;
-  const dataAvailable: Record<string, boolean> = {
-    hasAssetProfile: false,
-    hasSummaryProfile: false,
-    hasNews: newsArticles.length > 0,
-  };
-
-  try {
-    const info = await yahooFinance.quoteSummary(ticket, {
-      modules: ["assetProfile", "summaryProfile"],
-    });
-    assetProfile = info.assetProfile;
-    summaryProfile = info.summaryProfile;
-    dataAvailable.hasAssetProfile = !!assetProfile;
-    dataAvailable.hasSummaryProfile = !!summaryProfile;
-  } catch (error) {
-    log(
-      "debug",
-      `Could not fetch profile info for ${ticket}: ${(error as Error).message}`
-    );
-  }
-
-  const assetProfileData = assetProfile as Record<string, unknown> | undefined;
-  const summaryProfileData = summaryProfile as
-    | Record<string, unknown>
-    | undefined;
-
-  const result = {
-    symbol: ticket,
-    count: newsArticles.length,
-    news: newsArticles,
-    companyInfo: {
-      longName:
-        typeof assetProfileData?.longName === "string"
-          ? (assetProfileData.longName as string)
-          : undefined,
-      sector:
-        typeof assetProfileData?.sector === "string"
-          ? (assetProfileData.sector as string)
-          : undefined,
-      industry:
-        typeof assetProfileData?.industry === "string"
-          ? (assetProfileData.industry as string)
-          : undefined,
-      website:
-        typeof assetProfileData?.website === "string"
-          ? (assetProfileData.website as string)
-          : undefined,
-    },
-    summaryInfo: {
-      previousClose:
-        typeof summaryProfileData?.previousClose === "number"
-          ? (summaryProfileData.previousClose as number)
-          : undefined,
-      marketCap:
-        typeof summaryProfileData?.marketCap === "number"
-          ? (summaryProfileData.marketCap as number)
-          : undefined,
-      trailingPE:
-        typeof summaryProfileData?.trailingPE === "number"
-          ? (summaryProfileData.trailingPE as number)
-          : undefined,
-      forwardPE:
-        typeof summaryProfileData?.forwardPE === "number"
-          ? (summaryProfileData.forwardPE as number)
-          : undefined,
-    },
-    message:
-      newsArticles.length > 0
-        ? `Found ${newsArticles.length} news articles for ${ticket}`
-        : `No recent news found for ${ticket}`,
-    dataAvailable: {
-      hasAssetProfile: dataAvailable.hasAssetProfile,
-      hasSummaryProfile: dataAvailable.hasSummaryProfile,
-      hasNews: dataAvailable.hasNews,
-    },
-  };
+  const result = searchResult.news || [];
 
   if (CACHE_ENABLED) {
-    await cache.set(cacheKey, result);
+    await cache.set<SearchNews[]>(cacheKey, result);
   }
 
   return result;
@@ -477,7 +352,9 @@ router.get(
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/NewsData'
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/SearchNews'
  *       500:
  *         description: Server error
  *         content:
@@ -488,13 +365,8 @@ router.get(
 router.get(
   "/:ticket/news",
   async (
-    req: Request<
-      TicketRouteParams,
-      Record<string, unknown>,
-      unknown,
-      NewsQueryParams
-    >,
-    res: Response<unknown>
+    req: Request<TicketRouteParams, SearchNews[], unknown, NewsQueryParams>,
+    res: Response<SearchNews[] | ErrorResponse>
   ) => {
     const ticket = req.params.ticket.toUpperCase();
     const count = parseInt(req.query.count || "10", 10);

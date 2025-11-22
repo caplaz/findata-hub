@@ -21,7 +21,10 @@ export type {
   InsiderTransactions,
 } from "yahoo-finance2/esm/src/modules/quoteSummary-iface.js";
 
-export type { SearchResult } from "yahoo-finance2/esm/src/modules/search.js";
+export type {
+  SearchResult,
+  SearchNews,
+} from "yahoo-finance2/esm/src/modules/search.js";
 export type { RecommendationsBySymbolResponse } from "yahoo-finance2/esm/src/modules/recommendationsBySymbol.js";
 export type {
   ChartResultArray,
