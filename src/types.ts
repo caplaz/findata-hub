@@ -41,17 +41,6 @@ export type {
   PredefinedScreenerModules,
 } from "yahoo-finance2/esm/src/modules/screener";
 
-// Import yahooFinance for utility types
-import yahooFinance from "./yahoo";
-
-/**
- * Utility types derived from yahoo-finance2 function signatures
- */
-export type ScreenerOptions = Parameters<typeof yahooFinance.screener>[0];
-export type QuoteSummaryOptions = Parameters<
-  typeof yahooFinance.quoteSummary
->[1];
-
 /**
  * Fundamentals Time Series types
  */
