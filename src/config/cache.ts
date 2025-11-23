@@ -32,6 +32,12 @@ const CACHE_HOST = process.env.CACHE_HOST || "localhost:11211";
 const CACHE_TTL = parseInt(process.env.CACHE_TTL) || 300;
 
 /**
+ * Short Cache TTL for real-time data (e.g. quotes).
+ * Default: 10 seconds
+ */
+const CACHE_TTL_SHORT = 10;
+
+/**
  * Cache enabled flag for backward compatibility.
  * @deprecated Use CACHE_MODE instead
  */
@@ -47,7 +53,7 @@ interface CacheInterface<T = unknown> {
    * @param key - Cache key
    * @returns Promise resolving to the cached value or undefined
    */
-   
+
   get<K extends T = T>(_key: string): Promise<K | undefined>;
 
   /**
@@ -56,7 +62,7 @@ interface CacheInterface<T = unknown> {
    * @param value - Value to cache
    * @param ttl - Optional time-to-live in seconds
    */
-   
+
   set<K extends T = T>(_key: string, _value: K, _ttl?: number): Promise<void>;
 }
 
@@ -64,12 +70,12 @@ interface CacheInterface<T = unknown> {
  * No-op cache implementation for when caching is disabled
  */
 class NoOpCache<T = unknown> implements CacheInterface<T> {
-   
+
   async get<K extends T = T>(_key: string): Promise<K | undefined> {
     return undefined;
   }
 
-   
+
   async set<K extends T = T>(_key: string, _value: K, _ttl?: number): Promise<void> {
     // Do nothing
   }
@@ -156,6 +162,7 @@ export {
   CACHE_HOST,
   CACHE_ENABLED,
   CACHE_TTL,
+  CACHE_TTL_SHORT,
   CACHE_MODE_NODECACHE,
   CACHE_MODE_MEMCACHED,
   CACHE_MODE_NONE,

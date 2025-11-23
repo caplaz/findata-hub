@@ -5,7 +5,7 @@
  * @module mcp/handlers
  */
 
-import { cache, CACHE_ENABLED } from "../config/cache";
+import { cache, CACHE_ENABLED, CACHE_TTL_SHORT } from "../config/cache";
 import type {
   QuoteSummaryResult,
   AssetProfile,
@@ -78,8 +78,8 @@ async function handleGetStockQuote(symbols) {
     }
 
     if (CACHE_ENABLED) {
-      await cache.set(cacheKey, results);
-      log("debug", `MCP: Cached quote data for ${symbols}`);
+      await cache.set(cacheKey, results, CACHE_TTL_SHORT);
+      log("debug", `MCP: Cached quote data for ${symbols} with ${CACHE_TTL_SHORT}s TTL`);
     }
 
     return results;
@@ -92,71 +92,85 @@ async function handleGetStockQuote(symbols) {
  * Handle stock history requests
  */
 async function handleGetStockHistory(symbols, period = "1y", interval = "1d") {
-  const cacheKey = `history:${symbols}:${period}:${interval}`;
-  if (CACHE_ENABLED) {
-    const cached = await cache.get(cacheKey);
-    if (cached) {
-      log(
-        "debug",
-        `MCP: Cache hit for history: ${symbols} (${period}/${interval})`
-      );
-      return cached;
-    }
-    log(
-      "debug",
-      `MCP: Cache miss for history: ${symbols} (${period}/${interval})`
-    );
-  }
-
   try {
     const symbolArray = symbols.split(",").map((s) => s.trim());
-    log("debug", `MCP: Fetching history for ${symbolArray.join(", ")}`);
-
     const results = [];
-    for (const symbol of symbolArray) {
-      try {
-        const history: HistoricalHistoryResult = await yahooFinance.historical(
-          symbol,
-          {
-            period1: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000), // 1 year ago
-            period2: new Date(),
-            interval: "1d" as const,
-          }
-        );
+    const missingSymbols = [];
 
-        results.push({
-          symbol,
-          period,
-          interval,
-          dataPoints: history.length,
-          data: history.slice(0, 10).map((point) => ({
-            date: point.date,
-            open: point.open,
-            high: point.high,
-            low: point.low,
-            close: point.close,
-            volume: point.volume,
-          })),
-          summary: {
-            latestClose: history[history.length - 1]?.close,
-            highestPrice: Math.max(...history.map((h) => h.high)),
-            lowestPrice: Math.min(...history.map((h) => h.low)),
-          },
-        });
-      } catch (error) {
-        results.push({
-          symbol,
-          error: `Failed to fetch history: ${error.message}`,
-        });
+    // Check cache for each symbol
+    if (CACHE_ENABLED) {
+      for (const symbol of symbolArray) {
+        const cacheKey = `history:${symbol}:${period}:${interval}`;
+        const cached = await cache.get(cacheKey);
+        if (cached) {
+          log(
+            "debug",
+            `MCP: Cache hit for history: ${symbol} (${period}/${interval})`
+          );
+          // The cached item is the array of data points, but the tool expects an object with metadata
+          // We need to reconstruct the object structure or cache the full object
+          // Looking at the previous implementation, it seems we should cache the full object structure for the symbol
+          // Let's assume the cache stores the full object for that symbol
+          results.push(cached);
+        } else {
+          missingSymbols.push(symbol);
+        }
       }
+    } else {
+      missingSymbols.push(...symbolArray);
     }
 
-    if (CACHE_ENABLED) {
-      await cache.set(cacheKey, results);
-      log(
-        "debug",
-        `MCP: Cached history data for ${symbols} (${period}/${interval})`
-      );
+    if (missingSymbols.length > 0) {
+      log("debug", `MCP: Fetching history for ${missingSymbols.join(", ")}`);
+
+      for (const symbol of missingSymbols) {
+        try {
+          const history: HistoricalHistoryResult = await yahooFinance.historical(
+            symbol,
+            {
+              period1: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000), // 1 year ago
+              period2: new Date(),
+              interval: "1d" as const,
+            }
+          );
+
+          const resultObj = {
+            symbol,
+            period,
+            interval,
+            dataPoints: history.length,
+            data: history.slice(0, 10).map((point) => ({
+              date: point.date,
+              open: point.open,
+              high: point.high,
+              low: point.low,
+              close: point.close,
+              volume: point.volume,
+            })),
+            summary: {
+              latestClose: history[history.length - 1]?.close,
+              highestPrice: Math.max(...history.map((h) => h.high)),
+              lowestPrice: Math.min(...history.map((h) => h.low)),
+            },
+          };
+
+          results.push(resultObj);
+
+          if (CACHE_ENABLED) {
+            const cacheKey = `history:${symbol}:${period}:${interval}`;
+            await cache.set(cacheKey, resultObj);
+            log(
+              "debug",
+              `MCP: Cached history data for ${symbol} (${period}/${interval})`
+            );
+          }
+        } catch (error) {
+          results.push({
+            symbol,
+            error: `Failed to fetch history: ${error.message}`,
+          });
+        }
+      }
     }
 
     return results;

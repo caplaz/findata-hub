@@ -6,7 +6,7 @@
 
 import { Router, Request, Response } from "express";
 
-import { cache, CACHE_ENABLED } from "../config/cache";
+import { cache, CACHE_ENABLED, CACHE_TTL_SHORT } from "../config/cache";
 import type { QuoteSummaryResult, ErrorResponse } from "../types";
 import { log } from "../utils/logger";
 import yahooFinance from "../yahoo";
@@ -60,6 +60,7 @@ type QuoteResponseBody = Record<string, QuoteSummaryResult | ErrorResponse>;
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *
  */
 router.get(
   "/:symbols",
@@ -118,8 +119,8 @@ router.get(
       );
 
       if (CACHE_ENABLED) {
-        await cache.set<QuoteResponseBody>(cacheKey, data);
-        log("debug", `Cached quote data for ${symbols}`);
+        await cache.set<QuoteResponseBody>(cacheKey, data, CACHE_TTL_SHORT);
+        log("debug", `Cached quote data for ${symbols} with ${CACHE_TTL_SHORT}s TTL`);
       }
 
       res.json(data);

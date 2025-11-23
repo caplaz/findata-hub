@@ -93,30 +93,41 @@ router.get(
   ) => {
     const symbols = req.params.symbols;
     const { period = "1y", interval = "1d" } = req.query;
-    const cacheKey = `history:${symbols}:${period}:${interval}`;
     const symbolList = symbols.split(",").map((s) => s.trim());
+    const data: HistoryResponseBody = {};
+    const missingSymbols: string[] = [];
+
+    // Check cache for each symbol
+    if (CACHE_ENABLED) {
+      for (const symbol of symbolList) {
+        const symbolCacheKey = `history:${symbol}:${period}:${interval}`;
+        const cached = await cache.get<ChartResultArray["quotes"]>(
+          symbolCacheKey
+        );
+        if (cached) {
+          data[symbol] = cached;
+          log(
+            "debug",
+            `Cache hit for history: ${symbol} (${period}/${interval})`
+          );
+        } else {
+          missingSymbols.push(symbol);
+        }
+      }
+    } else {
+      missingSymbols.push(...symbolList);
+    }
+
+    if (missingSymbols.length === 0) {
+      return res.json(data);
+    }
 
     log(
-      "info",
-      `History request for symbols: ${symbolList.join(
+      "debug",
+      `Cache miss for history: ${missingSymbols.join(
         ", "
-      )}, period: ${period}, interval: ${interval} from ${req.ip}`
+      )} (${period}/${interval})`
     );
-
-    if (CACHE_ENABLED) {
-      const cached = await cache.get<HistoryResponseBody>(cacheKey);
-      if (cached) {
-        log(
-          "debug",
-          `Cache hit for history: ${symbols} (${period}/${interval})`
-        );
-        return res.json(cached);
-      }
-      log(
-        "debug",
-        `Cache miss for history: ${symbols} (${period}/${interval})`
-      );
-    }
 
     try {
       // Convert period to period1/period2 for chart API
@@ -162,12 +173,11 @@ router.get(
 
       log(
         "debug",
-        `Fetching historical data for ${symbolList.length} symbols from ${
-          period1.toISOString().split("T")[0]
+        `Fetching historical data for ${missingSymbols.length} symbols from ${period1.toISOString().split("T")[0]
         } to ${now.toISOString().split("T")[0]}`
       );
 
-      const promises = symbolList.map((symbol) =>
+      const promises = missingSymbols.map((symbol) =>
         yahooFinance.chart(symbol, {
           period1: Math.floor(period1.getTime() / 1000),
           period2: Math.floor(now.getTime() / 1000),
@@ -176,22 +186,27 @@ router.get(
       );
       const results = await Promise.allSettled(promises);
 
-      const data: HistoryResponseBody = {};
       let successCount = 0;
       let errorCount = 0;
 
-      results.forEach((result, index) => {
-        const symbol = symbolList[index];
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        const symbol = missingSymbols[i];
+        const symbolCacheKey = `history:${symbol}:${period}:${interval}`;
+
         if (result.status === "fulfilled") {
           const value = result.value as unknown as ChartResultArray;
           data[symbol] = value.quotes;
           successCount++;
           log(
             "debug",
-            `Successfully fetched history for ${symbol} (${
-              value.quotes?.length || 0
+            `Successfully fetched history for ${symbol} (${value.quotes?.length || 0
             } data points)`
           );
+
+          if (CACHE_ENABLED) {
+            await cache.set(symbolCacheKey, value.quotes);
+          }
         } else {
           data[symbol] = { error: result.reason.message };
           errorCount++;
@@ -200,20 +215,12 @@ router.get(
             `Failed to fetch history for ${symbol}: ${result.reason.message}`
           );
         }
-      });
+      }
 
       log(
         "info",
         `History request completed: ${successCount} successful, ${errorCount} failed`
       );
-
-      if (CACHE_ENABLED) {
-        await cache.set<HistoryResponseBody>(cacheKey, data);
-        log(
-          "debug",
-          `Cached history data for ${symbols} (${period}/${interval})`
-        );
-      }
 
       res.json(data);
     } catch (err) {
