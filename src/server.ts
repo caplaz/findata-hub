@@ -61,7 +61,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 /**
  * Serve OpenAPI JSON specification for third-party tools
  */
-app.get("/api-docs.tson", (req, res) => {
+app.get("/api-docs.json", (req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.send(swaggerSpec);
 });
