@@ -280,7 +280,7 @@ const swaggerOptions = {
       },
     },
   },
-  apis: ["./src/routes/index", "./src/mcp/server"], // Path to the API route docs
+  apis: ["./src/routes/*.ts", "./src/mcp/*.ts"], // Path to the API route docs
 };
 
 export { swaggerOptions };
