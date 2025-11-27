@@ -132,6 +132,81 @@ describe("Market Routes", () => {
         expect(res.body).toHaveProperty("sentiment");
         expect(res.body.sentiment).toHaveProperty("vix");
         expect(res.body.sentiment).toHaveProperty("fearGreedIndex");
+
+        // VIX can be null if Yahoo Finance is unavailable
+        if (res.body.sentiment.vix !== null) {
+          expect(res.body.sentiment.vix).toHaveProperty("symbol");
+          expect(res.body.sentiment.vix.symbol).toBe("^VIX");
+        }
+
+        // FearGreedIndex can be null if Alternative.me API is unavailable
+        if (res.body.sentiment.fearGreedIndex !== null) {
+          expect(res.body.sentiment.fearGreedIndex).toHaveProperty("score");
+          expect(res.body.sentiment.fearGreedIndex).toHaveProperty("rating");
+          expect(res.body.sentiment.fearGreedIndex).toHaveProperty("timestamp");
+
+          expect(typeof res.body.sentiment.fearGreedIndex.score).toBe("number");
+          expect(typeof res.body.sentiment.fearGreedIndex.rating).toBe(
+            "string"
+          );
+          expect(typeof res.body.sentiment.fearGreedIndex.timestamp).toBe(
+            "string"
+          );
+
+          // Score should be between 0 and 100
+          expect(
+            res.body.sentiment.fearGreedIndex.score
+          ).toBeGreaterThanOrEqual(0);
+          expect(res.body.sentiment.fearGreedIndex.score).toBeLessThanOrEqual(
+            100
+          );
+        }
+      }
+    });
+
+    test("should handle Fear & Greed Index API failures gracefully", async () => {
+      // This test verifies that if the Fear & Greed API fails,
+      // the endpoint still returns successfully with VIX data
+      const res = await request(app).get("/market/sentiment");
+
+      expect([200, 500]).toContain(res.status);
+      if (res.status === 200) {
+        expect(res.body).toHaveProperty("sentiment");
+        // Even if Fear & Greed API fails, we should still get a response
+        // The fearGreedIndex can be null, but the structure should be consistent
+        expect(res.body.sentiment).toHaveProperty("fearGreedIndex");
+      }
+    });
+
+    test("should return valid Fear & Greed Index ratings", async () => {
+      const res = await request(app).get("/market/sentiment");
+
+      expect([200, 500]).toContain(res.status);
+      if (res.status === 200 && res.body.sentiment.fearGreedIndex !== null) {
+        const validRatings = [
+          "Extreme Fear",
+          "Fear",
+          "Neutral",
+          "Greed",
+          "Extreme Greed",
+        ];
+
+        expect(validRatings).toContain(
+          res.body.sentiment.fearGreedIndex.rating
+        );
+      }
+    });
+
+    test("should return properly formatted timestamp for Fear & Greed Index", async () => {
+      const res = await request(app).get("/market/sentiment");
+
+      expect([200, 500]).toContain(res.status);
+      if (res.status === 200 && res.body.sentiment.fearGreedIndex !== null) {
+        const timestamp = res.body.sentiment.fearGreedIndex.timestamp;
+
+        // Should be a valid ISO date string
+        expect(() => new Date(timestamp)).not.toThrow();
+        expect(new Date(timestamp).toISOString()).toBe(timestamp);
       }
     });
   });

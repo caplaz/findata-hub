@@ -6,6 +6,9 @@
 
 import { Router, Request, Response } from "express";
 
+// Type declaration for Node.js 18+ global fetch
+declare const fetch: typeof globalThis.fetch;
+
 import { cache, CACHE_ENABLED } from "../config/cache";
 import type {
   Quote,
@@ -14,6 +17,8 @@ import type {
   TrendingSymbolsResult,
   SearchNews,
   ErrorResponse,
+  MarketSentiment,
+  FearGreedIndex,
 } from "../types";
 import { log } from "../utils/logger";
 import yahooFinance from "../yahoo";
@@ -806,7 +811,7 @@ router.get(
  * /market/sentiment:
  *   get:
  *     summary: Get market sentiment indicators
- *     description: Retrieve market sentiment data including VIX, put/call ratio, and other sentiment indicators
+ *     description: Retrieve market sentiment data including VIX, put/call ratio, and Fear & Greed Index
  *     tags: [Market]
  *     responses:
  *       200:
@@ -817,17 +822,15 @@ router.get(
  *               type: object
  *               properties:
  *                 sentiment:
- *                   type: object
- *                   properties:
- *                     vix:
- *                       $ref: '#/components/schemas/Quote'
- *                     fearGreedIndex:
- *                       type: object
- *                       description: Fear & Greed Index data (when available)
+ *                   $ref: '#/components/schemas/MarketSentiment'
  *             example:
  *               sentiment: {
  *                 "vix": {"symbol": "^VIX", "regularMarketPrice": 18.50},
- *                 "fearGreedIndex": {}
+ *                 "fearGreedIndex": {
+ *                   "score": 45,
+ *                   "rating": "Fear",
+ *                   "timestamp": "2025-11-27T15:00:00.000Z"
+ *                 }
  *               }
  *       500:
  *         description: Server error
@@ -840,27 +843,14 @@ router.get(
   "/sentiment",
   async (
     req: Request,
-    res: Response<
-      | {
-          sentiment: {
-            vix: Quote | null;
-            fearGreedIndex: Record<string, unknown>;
-          };
-        }
-      | ErrorResponse
-    >
+    res: Response<{ sentiment: MarketSentiment } | ErrorResponse>
   ) => {
     const cacheKey = "market_sentiment";
 
     log("info", `Market sentiment request from ${req.ip}`);
 
     if (CACHE_ENABLED) {
-      const cached = await cache.get<{
-        sentiment: {
-          vix: Quote | null;
-          fearGreedIndex: Record<string, unknown>;
-        };
-      }>(cacheKey);
+      const cached = await cache.get<{ sentiment: MarketSentiment }>(cacheKey);
       if (cached) {
         log("debug", `Cache hit for market sentiment`);
         return res.json(cached);
@@ -872,10 +862,33 @@ router.get(
       // Get VIX data
       const vixResult = await yahooFinance.quote("^VIX").catch(() => null);
 
+      // Fetch Fear & Greed Index from Alternative.me API
+      let fearGreedData: FearGreedIndex | null = null;
+      try {
+        const fearGreedResponse = await fetch(
+          "https://api.alternative.me/fng/"
+        );
+        if (fearGreedResponse.ok) {
+          const fearGreedJson = await fearGreedResponse.json();
+          if (fearGreedJson.data && fearGreedJson.data.length > 0) {
+            const latest = fearGreedJson.data[0];
+            fearGreedData = {
+              score: parseInt(latest.value),
+              rating: latest.value_classification,
+              timestamp: new Date(
+                parseInt(latest.timestamp) * 1000
+              ).toISOString(),
+            };
+          }
+        }
+      } catch (error) {
+        log("warn", `Failed to fetch Fear & Greed Index: ${error}`);
+      }
+
       const response = {
         sentiment: {
           vix: vixResult,
-          fearGreedIndex: {}, // Would need external API for Fear & Greed Index
+          fearGreedIndex: fearGreedData,
         },
       };
 

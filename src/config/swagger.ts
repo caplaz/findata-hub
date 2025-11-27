@@ -277,6 +277,43 @@ const swaggerOptions = {
             },
           },
         },
+        FearGreedIndex: {
+          type: "object",
+          description: "Fear & Greed Index data from Alternative.me",
+          properties: {
+            score: {
+              type: "number",
+              description: "Fear & Greed Index score (0-100)",
+              example: 45,
+            },
+            rating: {
+              type: "string",
+              description: "Human-readable rating",
+              example: "Fear",
+            },
+            timestamp: {
+              type: "string",
+              format: "date-time",
+              description: "Timestamp of the index reading",
+              example: "2025-11-27T15:00:00.000Z",
+            },
+          },
+        },
+        MarketSentiment: {
+          type: "object",
+          description:
+            "Market sentiment indicators including VIX and Fear & Greed Index",
+          properties: {
+            vix: {
+              $ref: "#/components/schemas/Quote",
+              description: "VIX (CBOE Volatility Index) data",
+            },
+            fearGreedIndex: {
+              $ref: "#/components/schemas/FearGreedIndex",
+              description: "Fear & Greed Index data (when available)",
+            },
+          },
+        },
       },
     },
   },

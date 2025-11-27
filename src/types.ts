@@ -8,6 +8,8 @@
  * @module types
  */
 
+import type { Quote } from "yahoo-finance2/esm/src/modules/quote";
+
 // Re-export types from yahoo-finance2 library
 export type {
   QuoteSummaryResult,
@@ -82,4 +84,21 @@ export interface ErrorResponse {
   error: string;
   code?: string;
   details?: unknown;
+}
+
+/**
+ * Fear & Greed Index data structure
+ */
+export interface FearGreedIndex {
+  score: number;
+  rating: string;
+  timestamp: string;
+}
+
+/**
+ * Market sentiment indicators
+ */
+export interface MarketSentiment {
+  vix?: Quote | null;
+  fearGreedIndex?: FearGreedIndex | null;
 }
