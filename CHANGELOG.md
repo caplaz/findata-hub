@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.2] - 2025-11-26
+
+### Fixed
+
+- **News Endpoint Functionality**: Fixed `/news` endpoint returning empty results
+
+  - **Root Cause**: yahoo-finance2 `search()` method requires non-empty query parameter
+  - **Solution**: Changed search query from empty string `""` to `"market"` to retrieve general market news
+  - **Error Resolution**: Eliminated "Missing required query parameter=q" errors
+  - **Functionality**: News endpoint now returns actual market news articles with titles, publishers, links, and metadata
+
+### Technical Details
+
+- All tests pass (247/247) including news endpoint functionality
+- Backward compatible - no breaking changes to API contracts
+- Caching and rate limiting continue to work correctly for news endpoint
+
 ## [2.0.1] - 2025-11-23
 
 ### Added
