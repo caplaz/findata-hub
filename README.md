@@ -60,6 +60,9 @@ The server will be available at `http://localhost:3000` with API docs at `http:/
 - `GET /history/:symbols` - Historical price data (multi-ticker support)
 - `GET /search/:query` - Symbol and news search
 - `GET /news-reader/*` - Article content extraction
+
+### Ticket Endpoints
+
 - `GET /ticket/:ticket` - Company information
 - `GET /ticket/:ticket/insights` - Comprehensive stock insights
 - `GET /ticket/:ticket/news` - Company-specific news

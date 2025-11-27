@@ -44,7 +44,13 @@ Returns MCP server status, version, and available tools.
   "service": "MCP Server",
   "version": "1.0.0",
   "toolsAvailable": 5,
-  "tools": ["get_stock_overview", "get_stock_analysis", "get_market_intelligence", "get_financial_deep_dive", "get_news_and_research"],
+  "tools": [
+    "get_stock_overview",
+    "get_stock_analysis",
+    "get_market_intelligence",
+    "get_financial_deep_dive",
+    "get_news_and_research"
+  ],
   "features": ["json-response", "sse-streaming"],
   "timestamp": "2025-11-16T04:43:25.528Z"
 }
@@ -152,6 +158,7 @@ Get comprehensive stock overview combining current quotes, company information, 
 - `symbol` (string, required): Stock ticker symbol (e.g., 'AAPL', 'GOOGL', 'MSFT')
 
 **Returns:** Complete stock overview including:
+
 - Current price, change, and market data
 - Company information (name, industry, sector, website, business summary)
 - Key financial metrics (P/E, dividend, market cap, beta, forward P/E)
@@ -168,6 +175,7 @@ Get comprehensive stock analysis combining recommendations, insights, performanc
 - `newsCount` (integer): Number of news articles to include (default: 5, max: 20)
 
 **Returns:** Complete analysis including:
+
 - Similar stock recommendations with scores
 - Analyst insights (recommendation trends, insider activity, upgrades/downgrades)
 - Performance analysis (1-year returns, volatility, trend direction)
@@ -186,6 +194,7 @@ Get market intelligence data including trending symbols, stock screeners, and sy
 - `count` (integer): Number of results to return (default: 25, max: 100)
 
 **Returns:** Market intelligence data based on action:
+
 - **trending**: List of trending symbols with prices and changes
 - **screener**: Stocks matching screener criteria with market data
 - **search**: Search results with symbol, name, type, and exchange
@@ -199,6 +208,7 @@ Get comprehensive financial data including statements and holdings information.
 - `symbol` (string, required): Stock ticker symbol (works best with ETFs and mutual funds)
 
 **Returns:** Financial deep dive including:
+
 - Financial statements (income, balance sheet, cash flow) for last 3 years
 - Holdings data for ETFs/mutual funds (top holdings, sector allocations, fund profile)
 - Key financial metrics and ratios
@@ -216,6 +226,7 @@ Get news and research data including articles, article reading, and symbol searc
 - `count` (integer): Number of results (default: 10, max: 50)
 
 **Returns:** News and research data based on action:
+
 - **news**: Latest news articles for a stock symbol
 - **read**: Full article content extracted from Yahoo Finance URL
 - **search**: Symbol search results matching the query
