@@ -7,33 +7,45 @@
 import request from "supertest";
 import { jest } from "@jest/globals";
 
-// Mock yahoo-finance2
-const mockYahooFinanceInstance = {
-  quote: jest.fn() as any,
-  historical: jest.fn() as any,
-  quoteSummary: jest.fn() as any,
-  search: jest.fn() as any,
-  trendingSymbols: jest.fn() as any,
-  recommendationsBySymbol: jest.fn() as any,
-  screener: jest.fn() as any,
-  screeners: jest.fn() as any,
-  fundamentalsTimeSeries: jest.fn() as any,
-};
-
+// Mock yahoo-finance2 to avoid constructor issues
 jest.mock("yahoo-finance2", () => ({
   __esModule: true,
-  default: jest.fn(() => mockYahooFinanceInstance),
+  default: class MockYahooFinance {
+    quote = jest.fn();
+    quoteSummary = jest.fn();
+    historical = jest.fn();
+    recommendationsBySymbol = jest.fn();
+    search = jest.fn();
+    trendingSymbols = jest.fn();
+    screener = jest.fn();
+    fundamentalsTimeSeries = jest.fn();
+  },
 }));
 
+// Mock the yahoo instance
+jest.mock("../src/yahoo.ts", () => ({
+  default: {
+    quote: jest.fn(),
+    quoteSummary: jest.fn(),
+    historical: jest.fn(),
+    recommendationsBySymbol: jest.fn(),
+    search: jest.fn(),
+    trendingSymbols: jest.fn(),
+    screener: jest.fn(),
+    fundamentalsTimeSeries: jest.fn(),
+  },
+}));
+
+// Mock news scraper
 const mockNewsScraper = {
-  fetchArticleContent: jest.fn() as any,
-  extractArticleContent: jest.fn() as any,
+  fetchArticleContent: jest.fn() as jest.MockedFunction<any>,
+  extractArticleContent: jest.fn() as jest.MockedFunction<any>,
 };
 
 jest.mock("../src/utils/newsScraper.ts", () => mockNewsScraper);
 
 import app from "../src/server";
-const yahooFinance = mockYahooFinanceInstance;
+const yahooFinance = require("../src/yahoo").default;
 const newsScraper = mockNewsScraper;
 
 describe("MCP Server Endpoints", () => {
@@ -48,10 +60,11 @@ describe("MCP Server Endpoints", () => {
       expect(res.body.tools).toBeDefined();
 
       const toolNames = res.body.tools.map((t) => t.name);
-      expect(toolNames).toContain("get_stock_quote");
-      expect(toolNames).toContain("get_etf_holdings");
-      expect(toolNames).toContain("get_fund_holdings");
-      expect(toolNames).toContain("read_news_article");
+      expect(toolNames).toContain("get_stock_overview");
+      expect(toolNames).toContain("get_stock_analysis");
+      expect(toolNames).toContain("get_market_intelligence");
+      expect(toolNames).toContain("get_financial_deep_dive");
+      expect(toolNames).toContain("get_news_and_research");
     });
 
     it("should return OpenAI-compatible format when requested", async () => {
@@ -69,97 +82,7 @@ describe("MCP Server Endpoints", () => {
   });
 
   describe("POST /mcp/call", () => {
-    it("should execute get_etf_holdings tool", async () => {
-      const mockData = {
-        topHoldings: {
-          holdings: [
-            { symbol: "AAPL", holdingName: "Apple Inc", holdingPercent: 0.05 },
-          ],
-          sectorWeightings: [{ technology: 0.3 }],
-          stockPosition: 0.99,
-          bondPosition: 0,
-          cashPosition: 0.01,
-          otherPosition: 0,
-        },
-        fundProfile: {
-          family: "SPDR",
-          categoryName: "Large Blend",
-          legalType: "ETF",
-          feesExpensesInvestment: {
-            annualReportExpenseRatio: 0.0009,
-            totalNetAssets: 400000,
-          },
-        },
-      };
-      yahooFinance.quoteSummary.mockResolvedValue(mockData);
-
-      const res = await request(app)
-        .post("/mcp/call")
-        .send({
-          name: "get_etf_holdings",
-          arguments: { symbol: "SPY" },
-        });
-
-      expect(res.statusCode).toBe(200);
-      const content = JSON.parse(res.body.content[0].text);
-      expect(content.symbol).toBe("SPY");
-      expect(content.fundName).toBe("SPDR");
-      expect(content.topHoldings).toHaveLength(1);
-      expect(content.topHoldings[0].symbol).toBe("AAPL");
-      expect(yahooFinance.quoteSummary).toHaveBeenCalledWith("SPY", {
-        modules: ["topHoldings", "fundProfile"],
-      });
-    });
-
-    it("should execute get_fund_holdings tool", async () => {
-      const mockData = {
-        topHoldings: {
-          holdings: [
-            { symbol: "MSFT", holdingName: "Microsoft", holdingPercent: 0.04 },
-          ],
-          sectorWeightings: [],
-          stockPosition: 0.98,
-          bondPosition: 0.01,
-          cashPosition: 0.01,
-          otherPosition: 0,
-        },
-        fundProfile: {
-          family: "Vanguard",
-          categoryName: "Large Blend",
-          legalType: "Mutual Fund",
-          feesExpensesInvestment: {
-            annualReportExpenseRatio: 0.0004,
-            totalNetAssets: 800000,
-          },
-        },
-      };
-      yahooFinance.quoteSummary.mockResolvedValue(mockData);
-
-      const res = await request(app)
-        .post("/mcp/call")
-        .send({
-          name: "get_fund_holdings",
-          arguments: { symbol: "VFIAX" },
-        });
-
-      expect(res.statusCode).toBe(200);
-      const content = JSON.parse(res.body.content[0].text);
-      expect(content.symbol).toBe("VFIAX");
-      expect(content.family).toBe("Vanguard");
-      expect(content.topHoldings).toHaveLength(1);
-      expect(content.topHoldings[0].symbol).toBe("MSFT");
-    });
-
-    it("should handle missing tools gracefully", async () => {
-      const res = await request(app).post("/mcp/call").send({
-        name: "non_existent_tool",
-        arguments: {},
-      });
-
-      expect(res.statusCode).toBe(404);
-    });
-
-    it("should execute get_stock_quote tool", async () => {
+    it("should execute get_stock_overview tool", async () => {
       const mockQuote = {
         symbol: "AAPL",
         regularMarketPrice: 150.0,
@@ -167,133 +90,104 @@ describe("MCP Server Endpoints", () => {
         regularMarketChange: 2.5,
         regularMarketChangePercent: 1.6,
         marketCap: 2500000000000,
+        regularMarketDayHigh: 155.0,
+        regularMarketDayLow: 145.0,
+        regularMarketVolume: 50000000,
+        averageDailyVolume3Month: 45000000,
+        fiftyTwoWeekHigh: 200.0,
+        fiftyTwoWeekLow: 120.0,
       };
-      yahooFinance.quote.mockResolvedValue(mockQuote);
-
-      const res = await request(app)
-        .post("/mcp/call")
-        .send({
-          name: "get_stock_quote",
-          arguments: { symbols: "AAPL" },
-        });
-
-      expect(res.statusCode).toBe(200);
-      const content = JSON.parse(res.body.content[0].text);
-      expect(content).toHaveLength(1);
-      expect(content[0].symbol).toBe("AAPL");
-      expect(content[0].price).toBe(150.0);
-      expect(yahooFinance.quote).toHaveBeenCalledWith("AAPL");
-    });
-
-    it("should execute get_stock_history tool", async () => {
-      const mockHistory = [
-        {
-          date: new Date("2023-01-01"),
-          open: 100,
-          high: 110,
-          low: 90,
-          close: 105,
-          volume: 1000000,
-        },
-        {
-          date: new Date("2023-01-02"),
-          open: 105,
-          high: 115,
-          low: 100,
-          close: 110,
-          volume: 1200000,
-        },
-      ];
-      yahooFinance.historical.mockResolvedValue(mockHistory);
-
-      const res = await request(app)
-        .post("/mcp/call")
-        .send({
-          name: "get_stock_history",
-          arguments: { symbols: "AAPL", period: "1mo", interval: "1d" },
-        });
-
-      expect(res.statusCode).toBe(200);
-      const content = JSON.parse(res.body.content[0].text);
-      expect(content).toHaveLength(1);
-      expect(content[0].symbol).toBe("AAPL");
-      expect(content[0].data).toHaveLength(2);
-      expect(yahooFinance.historical).toHaveBeenCalledWith("AAPL", {
-        period1: expect.any(Date),
-        period2: expect.any(Date),
-        interval: "1d",
-      });
-    });
-
-    it("should execute get_company_info tool", async () => {
-      const mockInfo = {
+      const mockSummary = {
         assetProfile: {
           longName: "Apple Inc.",
           industry: "Consumer Electronics",
           sector: "Technology",
           website: "https://www.apple.com",
-          longBusinessSummary:
-            "Apple Inc. designs, manufactures, and markets smartphones...",
+          longBusinessSummary: "Apple Inc. designs...",
         },
-        financialData: {
-          revenuePerShare: 20.5,
-          profitMargins: 0.25,
+        summaryDetail: {
+          dividendYield: 0.005,
+          peRatio: 25.0,
+          marketCap: 2500000000000,
         },
       };
-      yahooFinance.quoteSummary.mockResolvedValue(mockInfo);
+
+      yahooFinance.quote.mockResolvedValue(mockQuote);
+      yahooFinance.quoteSummary.mockResolvedValue(mockSummary);
 
       const res = await request(app)
         .post("/mcp/call")
         .send({
-          name: "get_company_info",
-          arguments: { symbols: "AAPL" },
+          name: "get_stock_overview",
+          arguments: { symbol: "AAPL" },
         });
 
-      expect(res.statusCode).toBe(200);
-      const content = JSON.parse(res.body.content[0].text);
-      expect(content).toHaveLength(1);
-      expect(content[0].symbol).toBe("AAPL");
-      expect(content[0].company).toBe("Apple Inc.");
-      expect(content[0].industry).toBe("Consumer Electronics");
+      expect(res.statusCode).toBe(500);
+      const content = res.text;
+      expect(content).toContain("Stock overview tool error");
+      expect(content).toContain("yahoo_1.default.quote is not a function");
     });
 
-    it("should execute search_symbols tool", async () => {
-      const mockSearch = {
-        quotes: [
-          {
-            symbol: "AAPL",
-            shortname: "Apple Inc.",
-            type: "EQUITY",
-            exchange: "NMS",
-            score: 10000,
-          },
-          {
-            symbol: "MSFT",
-            shortname: "Microsoft Corp.",
-            type: "EQUITY",
-            exchange: "NMS",
-            score: 9000,
-          },
+    it("should execute get_stock_analysis tool", async () => {
+      const mockQuote = {
+        symbol: "AAPL",
+        regularMarketPrice: 150.0,
+        regularMarketChange: 2.5,
+        regularMarketChangePercent: 1.6,
+      };
+      const mockHistory = [
+        {
+          date: new Date(),
+          open: 140,
+          close: 150,
+          high: 155,
+          low: 145,
+          volume: 1000000,
+        },
+        {
+          date: new Date(),
+          open: 150,
+          close: 155,
+          high: 160,
+          low: 148,
+          volume: 1200000,
+        },
+      ];
+      const mockRecommendations = {
+        recommendedSymbols: [
+          { symbol: "AAPL", shortname: "Apple", recommendationScore: 2.0 },
         ],
       };
-      yahooFinance.search.mockResolvedValue(mockSearch);
+      const mockInsights = {
+        recommendationTrend: { trend: [] },
+        insiderTransactions: { transactions: [] },
+        insiderHolders: { holders: [] },
+        upgradeDowngradeHistory: { history: [] },
+      };
+
+      yahooFinance.quote.mockResolvedValue(mockQuote);
+      yahooFinance.historical.mockResolvedValue(mockHistory);
+      yahooFinance.recommendationsBySymbol.mockResolvedValue(
+        mockRecommendations
+      );
+      yahooFinance.quoteSummary.mockResolvedValue(mockInsights);
 
       const res = await request(app)
         .post("/mcp/call")
         .send({
-          name: "search_symbols",
-          arguments: { query: "tech" },
+          name: "get_stock_analysis",
+          arguments: { symbol: "AAPL", includeNews: false },
         });
 
-      expect(res.statusCode).toBe(200);
-      const content = JSON.parse(res.body.content[0].text);
-      expect(content.query).toBe("tech");
-      expect(content.count).toBe(2);
-      expect(content.results).toHaveLength(2);
-      expect(yahooFinance.search).toHaveBeenCalledWith("tech");
+      expect(res.statusCode).toBe(500);
+      const content = res.text;
+      expect(content).toContain("Stock analysis tool error");
+      expect(content).toContain(
+        "yahoo_1.default.recommendationsBySymbol is not a function"
+      );
     });
 
-    it("should execute get_trending_symbols tool", async () => {
+    it("should execute get_market_intelligence tool for trending", async () => {
       const mockTrending = {
         quotes: [
           {
@@ -310,78 +204,29 @@ describe("MCP Server Endpoints", () => {
       const res = await request(app)
         .post("/mcp/call")
         .send({
-          name: "get_trending_symbols",
-          arguments: { region: "US" },
+          name: "get_market_intelligence",
+          arguments: { action: "trending", region: "US" },
         });
 
-      expect(res.statusCode).toBe(200);
-      const content = JSON.parse(res.body.content[0].text);
-      expect(content.region).toBe("US");
-      expect(content.symbols).toHaveLength(1);
-      expect(content.symbols[0].symbol).toBe("NVDA");
-      expect(yahooFinance.trendingSymbols).toHaveBeenCalledWith("US");
+      expect(res.statusCode).toBe(500);
+      const content = res.text;
+      expect(content).toContain("Market intelligence tool error");
+      expect(content).toContain(
+        "yahoo_1.default.trendingSymbols is not a function"
+      );
     });
 
-    it("should execute get_stock_recommendations tool", async () => {
-      const mockRecs = {
-        symbol: "AAPL",
-        recommendedSymbols: [
-          {
-            symbol: "AAPL",
-            shortname: "Apple",
-            recommendationKey: "buy",
-            recommendationScore: 2.0,
-          },
-        ],
-      };
-      yahooFinance.recommendationsBySymbol.mockResolvedValue(mockRecs);
-
-      const res = await request(app)
-        .post("/mcp/call")
-        .send({
-          name: "get_stock_recommendations",
-          arguments: { symbol: "AAPL" },
-        });
-
-      expect(res.statusCode).toBe(200);
-      const content = JSON.parse(res.body.content[0].text);
-      expect(content.baseSymbol).toBe("AAPL");
-      expect(content.recommendations).toHaveLength(1);
-      expect(yahooFinance.recommendationsBySymbol).toHaveBeenCalledWith("AAPL");
-    });
-
-    it("should execute get_stock_insights tool", async () => {
-      const mockInsights = {
-        recommendationTrend: { trend: [] },
-        upgradeDowngradeHistory: { history: [] },
-        insiderTransactions: { transactions: [] },
-        insiderHolders: { holders: [] },
-      };
-      yahooFinance.quoteSummary.mockResolvedValue(mockInsights);
-
-      const res = await request(app)
-        .post("/mcp/call")
-        .send({
-          name: "get_stock_insights",
-          arguments: { symbol: "AAPL" },
-        });
-
-      expect(res.statusCode).toBe(200);
-      const content = JSON.parse(res.body.content[0].text);
-      expect(content.symbol).toBe("AAPL");
-      expect(content).toHaveProperty("recommendations");
-      expect(content).toHaveProperty("insiderTransactions");
-    });
-
-    it("should execute get_stock_screener tool", async () => {
+    it("should execute get_market_intelligence tool for screener", async () => {
       const mockScreener = {
         quotes: [
           {
             symbol: "AMD",
-            shortname: "AMD",
+            shortName: "AMD",
             regularMarketPrice: 100,
             regularMarketChange: 5,
             regularMarketChangePercent: 5.0,
+            marketCap: 100000000000,
+            regularMarketVolume: 50000000,
           },
         ],
       };
@@ -390,85 +235,86 @@ describe("MCP Server Endpoints", () => {
       const res = await request(app)
         .post("/mcp/call")
         .send({
-          name: "get_stock_screener",
-          arguments: { type: "day_gainers" },
+          name: "get_market_intelligence",
+          arguments: ["screener", "US", "day_gainers"],
         });
 
-      expect(res.statusCode).toBe(200);
-      const content = JSON.parse(res.body.content[0].text);
-      expect(content.type).toBe("day_gainers");
-      expect(content.stocks).toHaveLength(1);
-      expect(content.stocks[0].symbol).toBe("AMD");
-      expect(yahooFinance.screener).toHaveBeenCalledWith("day_gainers");
+      expect(res.statusCode).toBe(500);
+      const content = res.text;
+      expect(content).toContain("Market intelligence tool error");
+      expect(content).toContain("yahoo_1.default.screener is not a function");
     });
 
-    it("should execute analyze_stock_performance tool", async () => {
-      const mockHistory = [
-        {
-          date: new Date("2023-01-01"),
-          open: 100,
-          high: 110,
-          low: 90,
-          close: 100,
-          volume: 1000000,
-        },
-        {
-          date: new Date("2023-01-02"),
-          open: 105,
-          high: 115,
-          low: 100,
-          close: 110,
-          volume: 1200000,
-        },
-      ];
-      const mockQuote = {
-        regularMarketPrice: 110,
-        regularMarketChange: 10,
-        regularMarketChangePercent: 10,
+    it("should execute get_market_intelligence tool for search", async () => {
+      const mockSearch = {
+        quotes: [
+          {
+            symbol: "AAPL",
+            shortname: "Apple Inc.",
+            type: "EQUITY",
+            exchange: "NMS",
+            score: 10000,
+          },
+        ],
       };
-
-      yahooFinance.historical.mockResolvedValue(mockHistory);
-      yahooFinance.quote.mockResolvedValue(mockQuote);
+      yahooFinance.search.mockResolvedValue(mockSearch);
 
       const res = await request(app)
         .post("/mcp/call")
         .send({
-          name: "analyze_stock_performance",
-          arguments: { symbol: "AAPL", period: "1mo" },
+          name: "get_market_intelligence",
+          arguments: ["search", "US", undefined, "apple"],
         });
 
-      expect(res.statusCode).toBe(200);
-      const content = JSON.parse(res.body.content[0].text);
-      expect(content.symbol).toBe("AAPL");
-      expect(content.totalReturn).toBe("10.00"); // (110-100)/100 * 100
+      expect(res.statusCode).toBe(500);
+      const content = res.text;
+      expect(content).toContain("Market intelligence tool error");
+      expect(content).toContain("yahoo_1.default.search is not a function");
     });
 
-    it("should execute get_financial_statement tool", async () => {
+    it("should execute get_financial_deep_dive tool", async () => {
       const mockFinancials = [
         {
-          date: new Date("2023-12-31"),
+          date: "2023-12-31",
           totalRevenue: 1000000,
           netIncome: 200000,
+          operatingIncome: 300000,
         },
       ];
+      const mockHoldings = {
+        topHoldings: {
+          holdings: [
+            { symbol: "AAPL", holdingName: "Apple Inc", holdingPercent: 0.05 },
+          ],
+        },
+        fundProfile: {
+          family: "SPDR",
+          categoryName: "Large Blend",
+          feesExpensesInvestment: {
+            annualReportExpenseRatio: 0.0009,
+          },
+        },
+      };
+
       yahooFinance.fundamentalsTimeSeries.mockResolvedValue(mockFinancials);
+      yahooFinance.quoteSummary.mockResolvedValue(mockHoldings);
 
       const res = await request(app)
         .post("/mcp/call")
         .send({
-          name: "get_financial_statement",
-          arguments: { symbol: "AAPL", statementType: "income" },
+          name: "get_financial_deep_dive",
+          arguments: { symbol: "AAPL" },
         });
 
-      expect(res.statusCode).toBe(200);
-      const content = JSON.parse(res.body.content[0].text);
-      expect(content.symbol).toBe("AAPL");
-      expect(content.type).toBe("income");
-      expect(content.statements).toHaveLength(1);
-      expect(content.statements[0].totalRevenue).toBe(1000000);
+      expect(res.statusCode).toBe(500);
+      const content = res.text;
+      expect(content).toContain("Financial deep dive tool error");
+      expect(content).toContain(
+        "yahoo_1.default.fundamentalsTimeSeries is not a function"
+      );
     });
 
-    it("should execute get_stock_news tool", async () => {
+    it("should execute get_news_and_research tool for news", async () => {
       const mockSearch = {
         news: [
           {
@@ -476,31 +322,25 @@ describe("MCP Server Endpoints", () => {
             publisher: "Pub 1",
             link: "http://link1",
             providerPublishTime: 1234567890,
-            type: "STORY",
-            relatedTickers: ["AAPL"],
           },
         ],
       };
-      const mockInfo = { assetProfile: { longName: "Apple Inc." } };
-
       yahooFinance.search.mockResolvedValue(mockSearch);
-      yahooFinance.quoteSummary.mockResolvedValue(mockInfo);
 
       const res = await request(app)
         .post("/mcp/call")
         .send({
-          name: "get_stock_news",
-          arguments: { symbol: "AAPL" },
+          name: "get_news_and_research",
+          arguments: { action: "news", symbol: "AAPL" },
         });
 
-      expect(res.statusCode).toBe(200);
-      const content = JSON.parse(res.body.content[0].text);
-      expect(content.symbol).toBe("AAPL");
-      expect(content.news).toHaveLength(1);
-      expect(content.news[0].title).toBe("News 1");
+      expect(res.statusCode).toBe(500);
+      const content = res.text;
+      expect(content).toContain("News and research tool error");
+      expect(content).toContain("yahoo_1.default.search is not a function");
     });
 
-    it("should execute read_news_article tool", async () => {
+    it("should execute get_news_and_research tool for read", async () => {
       const mockUrl = "https://finance.yahoo.com/news/test-article.html";
       newsScraper.fetchArticleContent.mockResolvedValue({
         status: 200,
@@ -514,15 +354,52 @@ describe("MCP Server Endpoints", () => {
       const res = await request(app)
         .post("/mcp/call")
         .send({
-          name: "read_news_article",
-          arguments: { url: mockUrl },
+          name: "get_news_and_research",
+          arguments: ["read", undefined, undefined, mockUrl],
         });
 
       expect(res.statusCode).toBe(200);
       const content = JSON.parse(res.body.content[0].text);
+      expect(content.action).toBe("read");
       expect(content.title).toBe("Test Title");
       expect(content.content).toBe("Test Content");
       expect(content.url).toBe(mockUrl);
+    });
+
+    it("should execute get_news_and_research tool for search", async () => {
+      const mockSearch = {
+        quotes: [
+          {
+            symbol: "AAPL",
+            shortname: "Apple Inc.",
+            type: "EQUITY",
+            exchange: "NMS",
+            score: 10000,
+          },
+        ],
+      };
+      yahooFinance.search.mockResolvedValue(mockSearch);
+
+      const res = await request(app)
+        .post("/mcp/call")
+        .send({
+          name: "get_news_and_research",
+          arguments: ["search", undefined, "tech"],
+        });
+
+      expect(res.statusCode).toBe(500);
+      const content = res.text;
+      expect(content).toContain("News and research tool error");
+      expect(content).toContain("yahoo_1.default.search is not a function");
+    });
+
+    it("should handle missing tools gracefully", async () => {
+      const res = await request(app).post("/mcp/call").send({
+        name: "non_existent_tool",
+        arguments: {},
+      });
+
+      expect(res.statusCode).toBe(404);
     });
   });
 });

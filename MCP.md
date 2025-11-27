@@ -10,7 +10,7 @@
 
 The MCP server extends the Yahoo Finance API with a protocol-compliant interface optimized for Large Language Models (LLMs). It provides:
 
-- **14 Financial Data Tools**: Stock quotes, history, company info, search, trending, recommendations, insights, screeners, performance analysis, financial statements, news, ETF holdings, fund holdings, and news article extraction
+- **5 Aggregated Financial Data Tools**: Comprehensive tools that combine multiple data sources for better LLM integration
 - **HTTP-based Access**: RESTful endpoints for tool discovery and execution
 - **Server-Sent Events (SSE)**: Streaming responses for long-running operations
 - **MCP Compliance**: Schema definitions compatible with MCP clients
@@ -43,8 +43,8 @@ Returns MCP server status, version, and available tools.
   "status": "healthy",
   "service": "MCP Server",
   "version": "1.0.0",
-  "toolsAvailable": 9,
-  "tools": ["get_stock_quote", "get_stock_history", ...],
+  "toolsAvailable": 5,
+  "tools": ["get_stock_overview", "get_stock_analysis", "get_market_intelligence", "get_financial_deep_dive", "get_news_and_research"],
   "features": ["json-response", "sse-streaming"],
   "timestamp": "2025-11-16T04:43:25.528Z"
 }
@@ -143,204 +143,138 @@ data: {"tool":"search_symbols","status":"success","timestamp":"...","message":"T
 
 ## Available Tools
 
-### 1. `get_stock_quote`
+### 1. `get_stock_overview`
 
-Get current stock quotes for one or more ticker symbols.
-
-**Arguments:**
-
-- `symbols` (string, required): Comma-separated list of stock ticker symbols (e.g., 'AAPL,GOOGL,MSFT')
-
-**Returns:** Array of quote objects with price, currency, market cap, P/E ratio, dividend, 52-week high/low, and average volume.
-
-### 2. `get_stock_history`
-
-Get historical price data for a stock symbol.
+Get comprehensive stock overview combining current quotes, company information, and key financial metrics.
 
 **Arguments:**
 
-- `symbols` (string, required): Stock ticker symbols
-- `period` (string): Time period (default: '1y'). Options: '1d', '5d', '1wk', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'max'
-- `interval` (string): Data interval (default: '1d'). Options: '1m', '5m', '15m', '30m', '60m', '1d', '1wk', '1mo'
+- `symbol` (string, required): Stock ticker symbol (e.g., 'AAPL', 'GOOGL', 'MSFT')
 
-**Returns:** Historical price data with latest close, highest/lowest prices, and OHLCV data points.
+**Returns:** Complete stock overview including:
+- Current price, change, and market data
+- Company information (name, industry, sector, website, business summary)
+- Key financial metrics (P/E, dividend, market cap, beta, forward P/E)
+- 52-week high/low and trading volume
 
-### 3. `get_company_info`
+### 2. `get_stock_analysis`
 
-Get comprehensive company information.
-
-**Arguments:**
-
-- `symbols` (string, required): Stock ticker symbols
-
-**Returns:** Company details including industry, sector, website, business summary, employees, revenue per share, and margins.
-
-### 4. `search_symbols`
-
-Search for stocks, ETFs, and indices by company name, symbol, or keyword.
-
-**Arguments:**
-
-- `query` (string, required): Search query
-
-**Returns:** Up to 10 matching results with symbol, name, type, and exchange information.
-
-### 5. `get_trending_symbols`
-
-Get trending/most watched stocks by region.
-
-**Arguments:**
-
-- `region` (string): Region code (default: 'US'). Options: 'US', 'GB', 'AU', 'CA', 'FR', 'DE', 'HK', 'SG', 'IN'
-
-**Returns:** List of trending symbols with current prices and percentage changes.
-
-### 6. `get_stock_recommendations`
-
-Get similar stock recommendations based on a stock symbol.
+Get comprehensive stock analysis combining recommendations, insights, performance data, and optional news.
 
 **Arguments:**
 
 - `symbol` (string, required): Stock ticker symbol
+- `includeNews` (boolean): Whether to include latest news articles (default: true)
+- `newsCount` (integer): Number of news articles to include (default: 5, max: 20)
 
-**Returns:** Recommended stocks with recommendation scores and analyst rating percentages.
+**Returns:** Complete analysis including:
+- Similar stock recommendations with scores
+- Analyst insights (recommendation trends, insider activity, upgrades/downgrades)
+- Performance analysis (1-year returns, volatility, trend direction)
+- Latest news articles (if requested)
 
-### 7. `get_stock_insights`
+### 3. `get_market_intelligence`
 
-Get comprehensive stock insights including analyst recommendations, insider activity, and research.
-
-**Arguments:**
-
-- `symbol` (string, required): Stock ticker symbol
-
-**Returns:** Recommendation trends, insider transactions, insider holders, and analyst upgrades/downgrades.
-
-### 8. `get_stock_screener`
-
-Get lists of stocks by specific criteria.
+Get market intelligence data including trending symbols, stock screeners, and symbol search.
 
 **Arguments:**
 
-- `type` (string, required): Screener type. Options: 'day_gainers', 'day_losers', 'most_actives', 'most_shorted', 'growth_tech_stocks', 'day_gainers_etf', 'day_losers_etf'
-- `count` (integer): Number of results (default: 25, max: 100)
+- `action` (string, required): Type of market intelligence. Options: 'trending', 'screener', 'search'
+- `region` (string): Region for trending data (default: 'US'). Options: 'US', 'GB', 'AU', 'CA', 'FR', 'DE', 'HK', 'SG', 'IN'
+- `screenerType` (string): Screener type when action is 'screener'. Options: 'day_gainers', 'day_losers', 'most_actives', etc.
+- `searchQuery` (string): Search query when action is 'search'
+- `count` (integer): Number of results to return (default: 25, max: 100)
 
-**Returns:** Lists of stocks matching the screener criteria with prices, changes, volume, and market cap.
+**Returns:** Market intelligence data based on action:
+- **trending**: List of trending symbols with prices and changes
+- **screener**: Stocks matching screener criteria with market data
+- **search**: Search results with symbol, name, type, and exchange
 
-### 9. `analyze_stock_performance`
+### 4. `get_financial_deep_dive`
 
-Analyze stock performance over a time period.
-
-**Arguments:**
-
-- `symbol` (string, required): Stock ticker symbol
-- `period` (string): Analysis period (default: '1y'). Options: '1d', '5d', '1wk', '1mo', '3mo', '6mo', '1y', 'max'
-
-**Returns:** Performance metrics including current price, period returns, volatility, trend direction, and historical highs/lows.
-
-### 10. `get_financial_statement`
-
-Get comprehensive financial statements including income statement, balance sheet, or cash flow statement.
+Get comprehensive financial data including statements and holdings information.
 
 **Arguments:**
 
-- `symbol` (string, required): Stock ticker symbol
-- `statementType` (string, required): Type of statement. Options: 'income', 'balance', 'cashflow'
-- `period` (string): Statement period (default: 'annual'). Options: 'annual', 'quarterly'
+- `symbol` (string, required): Stock ticker symbol (works best with ETFs and mutual funds)
 
-**Returns:** Financial statement data with key metrics:
+**Returns:** Financial deep dive including:
+- Financial statements (income, balance sheet, cash flow) for last 3 years
+- Holdings data for ETFs/mutual funds (top holdings, sector allocations, fund profile)
+- Key financial metrics and ratios
 
-- **Income Statement**: Revenue, gross profit, operating income, net income, diluted EPS
-- **Balance Sheet**: Total assets, liabilities, equity, cash, current assets/liabilities
-- **Cash Flow**: Operating cash flow, investing flow, financing flow, free cash flow
+### 5. `get_news_and_research`
 
-### 11. `get_stock_news`
-
-Get latest news articles and headlines for a stock.
+Get news and research data including articles, article reading, and symbol search.
 
 **Arguments:**
 
-- `symbol` (string, required): Stock ticker symbol
-- `count` (number): Number of articles to return (default: 10, max: 50)
+- `action` (string, required): Type of news/research action. Options: 'news', 'read', 'search'
+- `symbol` (string): Stock ticker symbol (required for 'news' action)
+- `query` (string): Search query (required for 'search' action)
+- `url` (string): Full Yahoo Finance article URL (required for 'read' action)
+- `count` (integer): Number of results (default: 10, max: 50)
 
-**Returns:** News articles with title, description, source, published date, and thumbnail.
-
-### 12. `get_etf_holdings`
-
-Get ETF holdings and sector weightings.
-
-**Arguments:**
-
-- `symbol` (string, required): ETF ticker symbol (e.g., SPY, QQQ)
-
-**Returns:** ETF holdings data including top positions, sector allocations, and fund information. Falls back to basic ETF information if detailed holdings are unavailable.
-
-### 13. `get_fund_holdings`
-
-Get mutual fund holdings and composition.
-
-**Arguments:**
-
-- `symbol` (string, required): Mutual fund ticker symbol
-
-**Returns:** Mutual fund holdings data including top positions and fund profile information.
-
-### 14. `read_news_article`
-
-Extract content from Yahoo Finance news articles.
-
-**Arguments:**
-
-- `url` (string, required): Full Yahoo Finance article URL
-
-**Returns:** Article title, content, and source URL extracted from the news article.
+**Returns:** News and research data based on action:
+- **news**: Latest news articles for a stock symbol
+- **read**: Full article content extracted from Yahoo Finance URL
+- **search**: Symbol search results matching the query
 
 ## Usage Examples
 
 ### Using curl for JSON Response
 
 ```bash
-# Search for stocks
+# Get stock overview
 curl -X POST http://localhost:3000/mcp/call \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "search_symbols",
-    "arguments": {"query": "apple"}
+    "name": "get_stock_overview",
+    "arguments": {"symbol": "AAPL"}
   }'
 
-# Get stock quotes
+# Get comprehensive stock analysis
 curl -X POST http://localhost:3000/mcp/call \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "get_stock_quote",
-    "arguments": {"symbols": "AAPL,MSFT"}
+    "name": "get_stock_analysis",
+    "arguments": {"symbol": "AAPL", "includeNews": true}
   }'
 
-# Get financial statement
+# Get market intelligence (trending)
 curl -X POST http://localhost:3000/mcp/call \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "get_financial_statement",
-    "arguments": {"symbol": "AAPL", "statementType": "income", "period": "annual"}
+    "name": "get_market_intelligence",
+    "arguments": {"action": "trending", "region": "US"}
   }'
 
-# Get latest news
+# Get financial deep dive
 curl -X POST http://localhost:3000/mcp/call \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "get_stock_news",
-    "arguments": {"symbol": "MSFT", "count": 5}
+    "name": "get_financial_deep_dive",
+    "arguments": {"symbol": "SPY"}
+  }'
+
+# Get news and research
+curl -X POST http://localhost:3000/mcp/call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "get_news_and_research",
+    "arguments": {"action": "news", "symbol": "MSFT"}
   }'
 ```
 
 ### Using curl for SSE Streaming
 
 ```bash
-# Stream trending symbols
+# Stream market intelligence
 curl -X POST http://localhost:3000/mcp/call-stream \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "get_trending_symbols",
-    "arguments": {"region": "US"}
+    "name": "get_market_intelligence",
+    "arguments": {"action": "trending", "region": "US"}
   }'
 ```
 
@@ -352,8 +286,8 @@ const response = await fetch("http://localhost:3000/mcp/call", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    name: "get_stock_quote",
-    arguments: { symbols: "AAPL" },
+    name: "get_stock_overview",
+    arguments: { symbol: "AAPL" },
   }),
 });
 const data = await response.json();
@@ -364,8 +298,8 @@ const eventSource = new EventSource("http://localhost:3000/mcp/call-stream", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    name: "search_symbols",
-    arguments: { query: "microsoft" },
+    name: "get_market_intelligence",
+    arguments: { action: "search", searchQuery: "microsoft" },
   }),
 });
 
@@ -393,8 +327,8 @@ import json
 response = requests.post(
     'http://localhost:3000/mcp/call',
     json={
-        'name': 'get_stock_quote',
-        'arguments': {'symbols': 'AAPL'}
+        'name': 'get_stock_overview',
+        'arguments': {'symbol': 'AAPL'}
     }
 )
 print(response.json())
@@ -403,8 +337,8 @@ print(response.json())
 response = requests.post(
     'http://localhost:3000/mcp/call-stream',
     json={
-        'name': 'search_symbols',
-        'arguments': {'query': 'apple'}
+        'name': 'get_market_intelligence',
+        'arguments': {'action': 'search', 'searchQuery': 'apple'}
     },
     stream=True
 )

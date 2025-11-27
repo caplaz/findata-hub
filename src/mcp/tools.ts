@@ -6,304 +6,123 @@
  */
 
 // ============================================================================
-// Tool Definitions (MCP Compliant)
+// Aggregated MCP Tools for LLM Integration
 // ============================================================================
 
 /**
- * Stock Quote Tool
- * Get current stock quotes for one or more ticker symbols
+ * Get Stock Overview Tool
+ * Get comprehensive stock overview including quote, company info, and key metrics
  */
-const getStockQuoteTool = {
-  name: "get_stock_quote",
+const getStockOverviewTool = {
+  name: "get_stock_overview",
   description:
-    "Get current stock quotes for one or more ticker symbols. Returns price, currency, market cap, and other key metrics.",
+    "Get a comprehensive overview of a stock including current quote, company information, and key financial metrics. This provides everything needed for a quick assessment of a company's current status and basic fundamentals.",
   inputSchema: {
     type: "object",
     properties: {
-      symbols: {
+      symbol: {
         type: "string",
-        description:
-          "Comma-separated list of stock ticker symbols (e.g., 'AAPL,GOOGL,MSFT')",
+        description: "Stock ticker symbol (e.g., AAPL, MSFT, GOOGL)",
       },
     },
-    required: ["symbols"],
+    required: ["symbol"],
   },
 };
 
 /**
- * Stock History Tool
- * Get historical price data for stocks
+ * Get Stock Analysis Tool
+ * Get detailed stock analysis including recommendations, insights, performance, and news
  */
-const getStockHistoryTool = {
-  name: "get_stock_history",
+const getStockAnalysisTool = {
+  name: "get_stock_analysis",
   description:
-    "Get historical price data for a stock symbol with configurable period and interval.",
+    "Get comprehensive stock analysis including analyst recommendations, insider insights, performance metrics, and recent news. This tool provides the data needed for investment analysis and decision making.",
   inputSchema: {
     type: "object",
     properties: {
-      symbols: {
+      symbol: {
         type: "string",
-        description:
-          "Comma-separated list of stock ticker symbols (e.g., 'AAPL,GOOGL')",
+        description: "Stock ticker symbol (e.g., AAPL, MSFT, GOOGL)",
       },
-      period: {
-        type: "string",
-        enum: [
-          "1d",
-          "5d",
-          "1wk",
-          "1mo",
-          "3mo",
-          "6mo",
-          "1y",
-          "2y",
-          "5y",
-          "10y",
-          "max",
-        ],
-        description: "Time period for historical data (default: '1y')",
+      includeNews: {
+        type: "boolean",
+        description: "Whether to include recent news articles (default: true)",
+        default: true,
       },
-      interval: {
-        type: "string",
-        enum: ["1m", "5m", "15m", "30m", "60m", "1d", "1wk", "1mo"],
-        description: "Data interval frequency (default: '1d')",
+      newsCount: {
+        type: "number",
+        description: "Number of news articles to include (default: 5, max: 20)",
+        default: 5,
+        minimum: 1,
+        maximum: 20,
       },
     },
-    required: ["symbols"],
+    required: ["symbol"],
   },
 };
 
 /**
- * Company Info Tool
- * Get comprehensive company information
+ * Get Market Intelligence Tool
+ * Get market intelligence including trending stocks, screening, and symbol search
  */
-const getCompanyInfoTool = {
-  name: "get_company_info",
+const getMarketIntelligenceTool = {
+  name: "get_market_intelligence",
   description:
-    "Get comprehensive company information including business summary, industry, website, and executives.",
+    "Get market intelligence including trending stocks, stock screening by criteria, and symbol search. This tool helps identify market opportunities and trends.",
   inputSchema: {
     type: "object",
     properties: {
-      symbols: {
+      action: {
         type: "string",
-        description:
-          "Comma-separated list of stock ticker symbols (e.g., 'AAPL,MSFT')",
+        enum: ["trending", "screener", "search"],
+        description: "Type of market intelligence to retrieve",
       },
-    },
-    required: ["symbols"],
-  },
-};
-
-/**
- * Search Symbols Tool
- * Search for stocks, ETFs, and indices
- */
-const searchSymbolsTool = {
-  name: "search_symbols",
-  description:
-    "Search for stocks, ETFs, and indices by company name, symbol, or keyword. Returns matching results with company details.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      query: {
-        type: "string",
-        description: "Search query (company name, symbol, or keyword)",
-      },
-    },
-    required: ["query"],
-  },
-};
-
-/**
- * Trending Symbols Tool
- * Get trending/most watched stocks by region
- */
-const getTrendingSymbolsTool = {
-  name: "get_trending_symbols",
-  description:
-    "Get trending/most watched stocks by region. Useful for market analysis and finding hot stocks.",
-  inputSchema: {
-    type: "object",
-    properties: {
       region: {
         type: "string",
-        enum: ["US", "GB", "AU", "CA", "FR", "DE", "HK", "SG", "IN"],
-        description: "Region code (default: 'US')",
+        description: "Region for trending symbols (default: US)",
+        default: "US",
       },
-    },
-    required: [],
-  },
-};
-
-/**
- * Stock Recommendations Tool
- * Get similar stock recommendations
- */
-const getStockRecommendationsTool = {
-  name: "get_stock_recommendations",
-  description:
-    "Get similar stock recommendations based on a given stock symbol. Useful for investment research and portfolio diversification.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      symbol: {
-        type: "string",
-        description: "Stock ticker symbol (e.g., 'AAPL')",
-      },
-    },
-    required: ["symbol"],
-  },
-};
-
-/**
- * Stock Insights Tool
- * Get comprehensive stock insights
- */
-const getStockInsightsTool = {
-  name: "get_stock_insights",
-  description:
-    "Get comprehensive stock insights including research, news sentiment, insider trades, and analyst recommendations.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      symbol: {
-        type: "string",
-        description: "Stock ticker symbol (e.g., 'AAPL')",
-      },
-    },
-    required: ["symbol"],
-  },
-};
-
-/**
- * Stock Screener Tool
- * Get lists of stocks by specific criteria
- */
-const getStockScreenerTool = {
-  name: "get_stock_screener",
-  description:
-    "Get lists of stocks by specific criteria (gainers, losers, active stocks, etc.). Useful for market analysis and trading strategies.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      type: {
+      screenerType: {
         type: "string",
         enum: [
+          "most_actives",
           "day_gainers",
           "day_losers",
-          "most_actives",
-          "most_shorted",
-          "growth_tech_stocks",
-          "day_gainers_etf",
-          "day_losers_etf",
+          "growth_stocks",
+          "undervalued_growth_stocks",
         ],
-        description: "Type of screener to retrieve",
+        description: "Type of stock screener to use",
       },
-      count: {
-        type: "integer",
-        minimum: 1,
-        maximum: 100,
-        description: "Number of results to return (default: 25)",
-      },
-    },
-    required: ["type"],
-  },
-};
-
-/**
- * Stock Performance Analysis Tool
- * Analyze stock performance over time
- */
-const analyzeStockPerformanceTool = {
-  name: "analyze_stock_performance",
-  description:
-    "Analyze stock performance by comparing current price against historical data. Returns performance metrics and trends.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      symbol: {
+      searchQuery: {
         type: "string",
-        description: "Stock ticker symbol (e.g., 'AAPL')",
-      },
-      period: {
-        type: "string",
-        enum: ["1d", "5d", "1wk", "1mo", "3mo", "6mo", "1y", "max"],
-        description: "Period for performance analysis (default: '1y')",
-      },
-    },
-    required: ["symbol"],
-  },
-};
-
-/**
- * Financial Statement Tool
- * Get financial statements (income, balance sheet, cash flow)
- */
-const getFinancialStatementTool = {
-  name: "get_financial_statement",
-  description:
-    "Get financial statements for a stock including income statement, balance sheet, and cash flow statement. Can retrieve annual or quarterly data.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      symbol: {
-        type: "string",
-        description: "Stock ticker symbol (e.g., 'AAPL', 'MSFT')",
-      },
-      statementType: {
-        type: "string",
-        enum: ["income", "balance", "cashflow"],
-        description:
-          "Type of financial statement: 'income' (income statement), 'balance' (balance sheet), or 'cashflow' (cash flow statement)",
-      },
-      period: {
-        type: "string",
-        enum: ["annual", "quarterly"],
-        description: "Period type: 'annual' or 'quarterly' (default: 'annual')",
-      },
-    },
-    required: ["symbol", "statementType"],
-  },
-};
-
-/**
- * Stock News Tool
- * Get latest news articles for stocks
- */
-const getStockNewsTool = {
-  name: "get_stock_news",
-  description:
-    "Get latest news articles and headlines for a stock symbol. Provides real-time market context and sentiment.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      symbol: {
-        type: "string",
-        description: "Stock ticker symbol (e.g., 'AAPL', 'GOOGL')",
+        description: "Search query for symbol lookup",
       },
       count: {
         type: "number",
-        description: "Number of news articles to return (default: 10, max: 50)",
+        description: "Number of results to return (default: 25, max: 50)",
+        default: 25,
+        minimum: 1,
+        maximum: 50,
       },
     },
-    required: ["symbol"],
+    required: ["action"],
   },
 };
 
 /**
- * ETF Holdings Tool
- * Get ETF holdings and sector weightings
+ * Get Financial Deep Dive Tool
+ * Get detailed financial statements and holdings information
  */
-const getEtfHoldingsTool = {
-  name: "get_etf_holdings",
+const getFinancialDeepDiveTool = {
+  name: "get_financial_deep_dive",
   description:
-    "Get ETF holdings, sector allocations, and position breakdowns. Useful for analyzing ETF composition.",
+    "Get detailed financial information including income statements, balance sheets, cash flow statements, and fund/ETF holdings. This tool provides comprehensive financial data for in-depth analysis.",
   inputSchema: {
     type: "object",
     properties: {
       symbol: {
         type: "string",
-        description: "ETF ticker symbol (e.g., 'SPY', 'QQQ')",
+        description: "Stock, ETF, or mutual fund ticker symbol",
       },
     },
     required: ["symbol"],
@@ -311,59 +130,50 @@ const getEtfHoldingsTool = {
 };
 
 /**
- * Mutual Fund Holdings Tool
- * Get mutual fund holdings and composition
+ * Get News and Research Tool
+ * Get news and research content with article reading capability
  */
-const getFundHoldingsTool = {
-  name: "get_fund_holdings",
+const getNewsAndResearchTool = {
+  name: "get_news_and_research",
   description:
-    "Get mutual fund holdings and composition data. Useful for analyzing mutual fund portfolios.",
+    "Get news articles, read full article content, or search for symbols. This tool provides comprehensive access to news and research content.",
   inputSchema: {
     type: "object",
     properties: {
+      action: {
+        type: "string",
+        enum: ["news", "read", "search"],
+        description: "Type of news/research action to perform",
+      },
       symbol: {
         type: "string",
-        description: "Mutual fund ticker symbol (e.g., 'VFIAX')",
+        description: "Stock ticker symbol (required for 'news' action)",
       },
-    },
-    required: ["symbol"],
-  },
-};
-
-/**
- * News Reader Tool
- * Extract content from Yahoo Finance news articles
- */
-const readNewsArticleTool = {
-  name: "read_news_article",
-  description:
-    "Extract the main title and text content from a Yahoo Finance news article URL.",
-  inputSchema: {
-    type: "object",
-    properties: {
+      query: {
+        type: "string",
+        description: "Search query (required for 'search' action)",
+      },
       url: {
         type: "string",
         description:
-          "The full Yahoo Finance article URL (must start with https://finance.yahoo.com/)",
+          "Article URL to read (required for 'read' action, must start with https://finance.yahoo.com/)",
+      },
+      count: {
+        type: "number",
+        description: "Number of results to return (default: 10, max: 25)",
+        default: 10,
+        minimum: 1,
+        maximum: 25,
       },
     },
-    required: ["url"],
+    required: ["action"],
   },
 };
 
 export const tools = [
-  getStockQuoteTool,
-  getStockHistoryTool,
-  getCompanyInfoTool,
-  searchSymbolsTool,
-  getTrendingSymbolsTool,
-  getStockRecommendationsTool,
-  getStockInsightsTool,
-  getStockScreenerTool,
-  analyzeStockPerformanceTool,
-  getFinancialStatementTool,
-  getStockNewsTool,
-  getEtfHoldingsTool,
-  getFundHoldingsTool,
-  readNewsArticleTool,
+  getStockOverviewTool,
+  getStockAnalysisTool,
+  getMarketIntelligenceTool,
+  getFinancialDeepDiveTool,
+  getNewsAndResearchTool,
 ];

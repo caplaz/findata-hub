@@ -7,7 +7,7 @@
 [![GitHub Issues](https://img.shields.io/github/issues/acerbetti/yahoo-finance-server.svg)](https://github.com/acerbetti/yahoo-finance-server/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/acerbetti/yahoo-finance-server.svg)](https://github.com/acerbetti/yahoo-finance-server/stargazers)
 
-A comprehensive Node.js Express API server that serves Yahoo Finance data using the yahoo-finance2 v3.10.2 library. Features 14 REST endpoints for financial data, 14 MCP (Model Context Protocol) tools for LLM integration, and supports multiple tickers in a single request with arrays as results and partial failure handling.
+A comprehensive Node.js Express API server that serves Yahoo Finance data using the yahoo-finance2 v3.10.2 library. Features 24 REST endpoints for financial data, 5 MCP (Model Context Protocol) tools for LLM integration, and supports multiple tickers in a single request with arrays as results and partial failure handling.
 
 ## ⚠️ Disclaimer
 
@@ -20,7 +20,7 @@ Special thanks to the authors and maintainers of the [yahoo-finance2](https://gi
 ## Features
 
 - **24 REST API Endpoints** for stock quotes, history, company info, search, market data, recommendations, insights, screeners, performance analysis, financial statements, news, holdings, events, statistics, and article content extraction
-- **14 MCP Tools** (Model Context Protocol) for LLM integration via HTTP + SSE streaming - see [MCP.md](./MCP.md) for detailed documentation
+- **5 MCP Tools** (Model Context Protocol) for LLM integration via HTTP + SSE streaming - see [MCP.md](./MCP.md) for detailed documentation
 - **OpenAPI Client Compatibility** - Full support for OpenAI function calling format via `?format=openai`
 - **CORS Support** - Cross-origin resource sharing enabled for web applications
 - Multi-ticker support for quotes and historical data endpoints with partial failure handling
@@ -29,7 +29,7 @@ Special thanks to the authors and maintainers of the [yahoo-finance2](https://gi
 - Comprehensive API logging with configurable levels (`error`, `warn`, `info`, `debug`)
 - Docker multi-stage build with multi-architecture support (AMD64, ARM64, ARMv7)
 - Health checks and proper error handling
-- Jest tests with comprehensive coverage (271 tests across 25 test suites)
+- Jest tests with comprehensive coverage (252 tests across 22 test suites)
 - **Interactive API Documentation** at `/api-docs` (Swagger UI)
 - **OpenAPI JSON Specification** at `/api-docs.json`
 - **Modular architecture** with separated concerns

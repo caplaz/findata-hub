@@ -40,17 +40,11 @@ describe("MCP Endpoints", () => {
     test("should include required tools", async () => {
       const response = await request(app).get("/mcp/health");
       const requiredTools = [
-        "get_stock_quote",
-        "get_stock_history",
-        "get_company_info",
-        "search_symbols",
-        "get_trending_symbols",
-        "get_stock_recommendations",
-        "get_stock_insights",
-        "get_stock_screener",
-        "analyze_stock_performance",
-        "get_financial_statement",
-        "get_stock_news",
+        "get_stock_overview",
+        "get_stock_analysis",
+        "get_market_intelligence",
+        "get_financial_deep_dive",
+        "get_news_and_research",
       ];
 
       for (const tool of requiredTools) {
@@ -118,27 +112,22 @@ describe("MCP Endpoints", () => {
       }
     });
 
-    test("should include financial statement tool schema", async () => {
+    test("should include financial deep dive tool schema", async () => {
       const response = await request(app).get("/mcp/tools");
       const financialTool = response.body.tools.find(
-        (t: any) => t.name === "get_financial_statement"
+        (t: any) => t.name === "get_financial_deep_dive"
       );
       expect(financialTool).toBeDefined();
       expect(financialTool.inputSchema.required).toContain("symbol");
-      expect(financialTool.inputSchema.required).toContain("statementType");
-      expect(financialTool.inputSchema.properties.statementType).toHaveProperty(
-        "enum"
-      );
     });
 
-    test("should include stock news tool schema", async () => {
+    test("should include news and research tool schema", async () => {
       const response = await request(app).get("/mcp/tools");
       const newsTool = response.body.tools.find(
-        (t: any) => t.name === "get_stock_news"
+        (t: any) => t.name === "get_news_and_research"
       );
       expect(newsTool).toBeDefined();
-      expect(newsTool.inputSchema.required).toContain("symbol");
-      expect(newsTool.inputSchema.properties.count).toHaveProperty("type");
+      expect(newsTool.inputSchema.properties.action).toHaveProperty("enum");
     });
   });
 
@@ -246,56 +235,56 @@ describe("MCP Endpoints", () => {
   });
 
   describe("Tool functionality", () => {
-    test("get_stock_quote should accept comma-separated symbols", async () => {
+    test("get_stock_overview should accept symbol parameter", async () => {
       const response = await request(app)
         .post("/mcp/call")
         .send({
-          name: "get_stock_quote",
-          arguments: { symbols: "AAPL,MSFT,GOOGL" },
+          name: "get_stock_overview",
+          arguments: { symbol: "AAPL" },
         });
 
       expect([200, 500]).toContain(response.status);
     });
 
-    test("get_stock_history should accept period parameter", async () => {
+    test("get_stock_analysis should accept symbol parameter", async () => {
       const response = await request(app)
         .post("/mcp/call")
         .send({
-          name: "get_stock_history",
-          arguments: { symbols: "AAPL", period: "1y" },
+          name: "get_stock_analysis",
+          arguments: { symbol: "AAPL" },
         });
 
       expect([200, 500]).toContain(response.status);
     });
 
-    test("get_trending_symbols should accept region parameter", async () => {
+    test("get_market_intelligence should accept action parameter", async () => {
       const response = await request(app)
         .post("/mcp/call")
         .send({
-          name: "get_trending_symbols",
-          arguments: { region: "US" },
+          name: "get_market_intelligence",
+          arguments: { action: "trending" },
         });
 
       expect([200, 500]).toContain(response.status);
     });
 
-    test("analyze_stock_performance should accept period parameter", async () => {
+    test("get_financial_deep_dive should accept symbol parameter", async () => {
       const response = await request(app)
         .post("/mcp/call")
         .send({
-          name: "analyze_stock_performance",
-          arguments: { symbol: "AAPL", period: "6mo" },
+          name: "get_financial_deep_dive",
+          arguments: { symbol: "AAPL" },
         });
 
       expect([200, 500]).toContain(response.status);
     });
 
-    test("get_stock_screener should accept type parameter", async () => {
+    test("get_news_and_research should accept action parameter", async () => {
       const response = await request(app)
         .post("/mcp/call")
         .send({
-          name: "get_stock_screener",
-          arguments: { type: "day_gainers" },
+          name: "get_news_and_research",
+          arguments: { action: "news", symbol: "AAPL" },
         });
 
       expect([200, 500]).toContain(response.status);
@@ -303,20 +292,20 @@ describe("MCP Endpoints", () => {
   });
 
   describe("Integration tests", () => {
-    test("should list all 14 tools", async () => {
+    test("should list all 5 tools", async () => {
       const response = await request(app).get("/mcp/health");
-      expect(response.body.toolsAvailable).toBe(14);
+      expect(response.body.toolsAvailable).toBe(5);
     });
 
     test("should support all tool execution methods", async () => {
-      const toolName = "get_stock_quote";
+      const toolName = "get_stock_overview";
 
       // Test JSON response
       const jsonResponse = await request(app)
         .post("/mcp/call")
         .send({
           name: toolName,
-          arguments: { symbols: "AAPL" },
+          arguments: { symbol: "AAPL" },
         });
       expect([200, 500]).toContain(jsonResponse.status);
 
@@ -325,7 +314,7 @@ describe("MCP Endpoints", () => {
         .post("/mcp/call-stream")
         .send({
           name: toolName,
-          arguments: { symbols: "AAPL" },
+          arguments: { symbol: "AAPL" },
         })
         .timeout(10000);
       expect([200, 500]).toContain(streamResponse.status);

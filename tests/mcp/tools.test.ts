@@ -14,26 +14,17 @@ describe("MCP Tools", () => {
     });
 
     test("should have expected number of tools", () => {
-      expect(tools.length).toBe(14);
+      expect(tools.length).toBe(5);
     });
 
     test("should include all required tools", () => {
       const toolNames = tools.map((t) => t.name);
       const requiredTools = [
-        "get_stock_quote",
-        "get_stock_history",
-        "get_company_info",
-        "search_symbols",
-        "get_trending_symbols",
-        "get_stock_recommendations",
-        "get_stock_insights",
-        "get_stock_screener",
-        "analyze_stock_performance",
-        "get_financial_statement",
-        "get_stock_news",
-        "get_etf_holdings",
-        "get_fund_holdings",
-        "read_news_article",
+        "get_stock_overview",
+        "get_stock_analysis",
+        "get_market_intelligence",
+        "get_financial_deep_dive",
+        "get_news_and_research",
       ];
 
       for (const tool of requiredTools) {
@@ -65,114 +56,49 @@ describe("MCP Tools", () => {
   });
 
   describe("Specific Tool Schemas", () => {
-    test("get_stock_quote tool schema", () => {
-      const tool = tools.find((t) => t.name === "get_stock_quote");
+    test("get_stock_overview tool schema", () => {
+      const tool = tools.find((t) => t.name === "get_stock_overview");
       expect(tool).toBeDefined();
-      expect(tool!.inputSchema.required).toContain("symbols");
-      expect((tool!.inputSchema.properties as any).symbols.type).toBe("string");
+      expect(tool!.inputSchema.required).toEqual(["symbol"]);
+      expect((tool!.inputSchema.properties as any).symbol.type).toBe("string");
     });
 
-    test("get_stock_history tool schema", () => {
-      const tool = tools.find((t) => t.name === "get_stock_history");
+    test("get_stock_analysis tool schema", () => {
+      const tool = tools.find((t) => t.name === "get_stock_analysis");
       expect(tool).toBeDefined();
-      expect(tool!.inputSchema.required).toEqual(["symbols"]);
-      expect((tool!.inputSchema.properties as any).symbols.type).toBe("string");
-      expect((tool!.inputSchema.properties as any).period).toBeDefined();
-      expect((tool!.inputSchema.properties as any).interval).toBeDefined();
+      expect(tool!.inputSchema.required).toEqual(["symbol"]);
+      expect((tool!.inputSchema.properties as any).symbol.type).toBe("string");
+      expect((tool!.inputSchema.properties as any).includeNews).toBeDefined();
+      expect((tool!.inputSchema.properties as any).newsCount).toBeDefined();
     });
 
-    test("get_company_info tool schema", () => {
-      const tool = tools.find((t) => t.name === "get_company_info");
+    test("get_market_intelligence tool schema", () => {
+      const tool = tools.find((t) => t.name === "get_market_intelligence");
       expect(tool).toBeDefined();
-      expect(tool!.inputSchema.required).toEqual(["symbols"]);
-    });
-
-    test("search_symbols tool schema", () => {
-      const tool = tools.find((t) => t.name === "search_symbols");
-      expect(tool).toBeDefined();
-      expect(tool!.inputSchema.required).toEqual(["query"]);
-      expect((tool!.inputSchema.properties as any).query.type).toBe("string");
-    });
-
-    test("get_trending_symbols tool schema", () => {
-      const tool = tools.find((t) => t.name === "get_trending_symbols");
-      expect(tool).toBeDefined();
+      expect(tool!.inputSchema.required).toEqual(["action"]);
+      expect((tool!.inputSchema.properties as any).action.enum).toBeDefined();
       expect((tool!.inputSchema.properties as any).region).toBeDefined();
-      expect((tool!.inputSchema.properties as any).region.enum).toEqual([
-        "US",
-        "GB",
-        "AU",
-        "CA",
-        "FR",
-        "DE",
-        "HK",
-        "SG",
-        "IN",
-      ]);
-    });
-
-    test("get_stock_recommendations tool schema", () => {
-      const tool = tools.find((t) => t.name === "get_stock_recommendations");
-      expect(tool).toBeDefined();
-      expect(tool!.inputSchema.required).toEqual(["symbol"]);
-    });
-
-    test("get_stock_insights tool schema", () => {
-      const tool = tools.find((t) => t.name === "get_stock_insights");
-      expect(tool).toBeDefined();
-      expect(tool!.inputSchema.required).toEqual(["symbol"]);
-    });
-
-    test("get_stock_screener tool schema", () => {
-      const tool = tools.find((t) => t.name === "get_stock_screener");
-      expect(tool).toBeDefined();
-      expect(tool!.inputSchema.required).toEqual(["type"]);
-      expect((tool!.inputSchema.properties as any).type.enum).toBeDefined();
-    });
-
-    test("analyze_stock_performance tool schema", () => {
-      const tool = tools.find((t) => t.name === "analyze_stock_performance");
-      expect(tool).toBeDefined();
-      expect(tool!.inputSchema.required).toEqual(["symbol"]);
-      expect((tool!.inputSchema.properties as any).period).toBeDefined();
-    });
-
-    test("get_financial_statement tool schema", () => {
-      const tool = tools.find((t) => t.name === "get_financial_statement");
-      expect(tool).toBeDefined();
-      expect(tool!.inputSchema.required).toEqual(["symbol", "statementType"]);
-      expect((tool!.inputSchema.properties as any).statementType.enum).toEqual([
-        "income",
-        "balance",
-        "cashflow",
-      ]);
-    });
-
-    test("get_stock_news tool schema", () => {
-      const tool = tools.find((t) => t.name === "get_stock_news");
-      expect(tool).toBeDefined();
-      expect(tool!.inputSchema.required).toEqual(["symbol"]);
+      expect((tool!.inputSchema.properties as any).screenerType).toBeDefined();
+      expect((tool!.inputSchema.properties as any).searchQuery).toBeDefined();
       expect((tool!.inputSchema.properties as any).count).toBeDefined();
-      expect((tool!.inputSchema.properties as any).count.type).toBe("number");
     });
 
-    test("get_etf_holdings tool schema", () => {
-      const tool = tools.find((t) => t.name === "get_etf_holdings");
+    test("get_financial_deep_dive tool schema", () => {
+      const tool = tools.find((t) => t.name === "get_financial_deep_dive");
       expect(tool).toBeDefined();
       expect(tool!.inputSchema.required).toEqual(["symbol"]);
+      expect((tool!.inputSchema.properties as any).symbol.type).toBe("string");
     });
 
-    test("get_fund_holdings tool schema", () => {
-      const tool = tools.find((t) => t.name === "get_fund_holdings");
+    test("get_news_and_research tool schema", () => {
+      const tool = tools.find((t) => t.name === "get_news_and_research");
       expect(tool).toBeDefined();
-      expect(tool!.inputSchema.required).toEqual(["symbol"]);
-    });
-
-    test("read_news_article tool schema", () => {
-      const tool = tools.find((t) => t.name === "read_news_article");
-      expect(tool).toBeDefined();
-      expect(tool!.inputSchema.required).toEqual(["url"]);
-      expect((tool!.inputSchema.properties as any).url.type).toBe("string");
+      expect(tool!.inputSchema.required).toEqual(["action"]);
+      expect((tool!.inputSchema.properties as any).action.enum).toBeDefined();
+      expect((tool!.inputSchema.properties as any).symbol).toBeDefined();
+      expect((tool!.inputSchema.properties as any).query).toBeDefined();
+      expect((tool!.inputSchema.properties as any).url).toBeDefined();
+      expect((tool!.inputSchema.properties as any).count).toBeDefined();
     });
   });
 
@@ -186,14 +112,14 @@ describe("MCP Tools", () => {
 
     test("financial tools should mention their purpose", () => {
       const financialTool = tools.find(
-        (t) => t.name === "get_financial_statement"
+        (t) => t.name === "get_financial_deep_dive"
       );
-      expect(financialTool!.description).toMatch(/financial|statement/i);
+      expect(financialTool!.description).toMatch(/financial|deep.dive/i);
     });
 
     test("news tools should mention news", () => {
-      const newsTool = tools.find((t) => t.name === "get_stock_news");
-      expect(newsTool!.description).toMatch(/news/i);
+      const newsTool = tools.find((t) => t.name === "get_news_and_research");
+      expect(newsTool!.description).toMatch(/news|research/i);
     });
   });
 });

@@ -228,7 +228,7 @@ router.get("/health", (req: Request, res: Response) => {
     version: "1.0.0",
     toolsAvailable: tools.length,
     tools: tools.map((t) => t.name),
-    features: ["json-response", "sse-streaming"],
+    features: ["json-response", "sse-streaming", "aggregated-tools"],
     timestamp: new Date().toISOString(),
   });
 });
@@ -266,12 +266,12 @@ router.get("/health", (req: Request, res: Response) => {
  *                   example: "1.0.0"
  *                 toolsAvailable:
  *                   type: integer
- *                   example: 14
+ *                   example: 5
  *                 tools:
  *                   type: array
  *                   items:
  *                     type: string
- *                   example: ["get_stock_quote", "get_stock_history"]
+ *                   example: ["get_stock_overview", "get_stock_analysis", "get_market_intelligence", "get_financial_deep_dive", "get_news_and_research"]
  *                 features:
  *                   type: array
  *                   items:
