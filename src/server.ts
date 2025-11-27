@@ -177,10 +177,12 @@ if (require.main === module) {
       `   GET /ticket/:ticket/:type - Financial statements (income/balance/cashflow)`
     );
     log("info", `\n🤖 MCP (Model Context Protocol) Endpoints:`);
+    log(
+      "info",
+      `   POST /mcp - MCP protocol endpoint (official SDK transport)`
+    );
     log("info", `   GET /mcp/health - MCP server health & tools info`);
     log("info", `   GET /mcp/tools - List all available MCP tools`);
-    log("info", `   POST /mcp/call - Execute tool (JSON response)`);
-    log("info", `   POST /mcp/call-stream - Execute tool (SSE streaming)`);
   });
 }
 

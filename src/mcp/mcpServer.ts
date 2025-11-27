@@ -8,16 +8,22 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import * as z from "zod/v4";
 
+import { log } from "../utils/logger";
+
 import { toolHandlers } from "./handlers";
 
 /**
  * Create and configure the MCP server with all financial tools
  */
 export function createMcpServer(): McpServer {
+  log("info", "🤖 Initializing MCP Server with @modelcontextprotocol/sdk");
+
   const server = new McpServer({
     name: "yahoo-finance-mcp",
     version: "2.0.2",
   });
+
+  log("info", "📊 Registering 5 financial data tools...");
 
   // ============================================================================
   // Register Stock Overview Tool
@@ -35,14 +41,22 @@ export function createMcpServer(): McpServer {
       },
     },
     async ({ symbol }) => {
-      const result = await toolHandlers.get_stock_overview(symbol);
-      return {
-        content: [
-          { type: "text" as const, text: JSON.stringify(result, null, 2) },
-        ],
-      };
+      log("debug", `🔍 Executing get_stock_overview for symbol: ${symbol}`);
+      try {
+        const result = await toolHandlers.get_stock_overview(symbol);
+        log("debug", `✅ get_stock_overview completed for ${symbol}`);
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (error) {
+        log("error", `❌ get_stock_overview failed for ${symbol}:`, error);
+        throw error;
+      }
     }
   );
+  log("info", "✅ Registered tool: get_stock_overview");
 
   // ============================================================================
   // Register Stock Analysis Tool
@@ -70,18 +84,31 @@ export function createMcpServer(): McpServer {
       },
     },
     async ({ symbol, includeNews, newsCount }) => {
-      const result = await toolHandlers.get_stock_analysis(
-        symbol,
-        includeNews ?? true,
-        newsCount ?? 5
+      log(
+        "debug",
+        `🔍 Executing get_stock_analysis for symbol: ${symbol} (news: ${
+          includeNews ?? true
+        }, count: ${newsCount ?? 5})`
       );
-      return {
-        content: [
-          { type: "text" as const, text: JSON.stringify(result, null, 2) },
-        ],
-      };
+      try {
+        const result = await toolHandlers.get_stock_analysis(
+          symbol,
+          includeNews ?? true,
+          newsCount ?? 5
+        );
+        log("debug", `✅ get_stock_analysis completed for ${symbol}`);
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (error) {
+        log("error", `❌ get_stock_analysis failed for ${symbol}:`, error);
+        throw error;
+      }
     }
   );
+  log("info", "✅ Registered tool: get_stock_analysis");
 
   // ============================================================================
   // Register Market Intelligence Tool
@@ -123,20 +150,40 @@ export function createMcpServer(): McpServer {
       },
     },
     async ({ action, region, screenerType, searchQuery, count }) => {
-      const result = await toolHandlers.get_market_intelligence(
-        action,
-        region ?? "US",
-        screenerType,
-        searchQuery,
-        count ?? 25
+      log(
+        "debug",
+        `🔍 Executing get_market_intelligence - action: ${action}, region: ${
+          region ?? "US"
+        }, count: ${count ?? 25}`
       );
-      return {
-        content: [
-          { type: "text" as const, text: JSON.stringify(result, null, 2) },
-        ],
-      };
+      try {
+        const result = await toolHandlers.get_market_intelligence(
+          action,
+          region ?? "US",
+          screenerType,
+          searchQuery,
+          count ?? 25
+        );
+        log(
+          "debug",
+          `✅ get_market_intelligence completed for action: ${action}`
+        );
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (error) {
+        log(
+          "error",
+          `❌ get_market_intelligence failed for action ${action}:`,
+          error
+        );
+        throw error;
+      }
     }
   );
+  log("info", "✅ Registered tool: get_market_intelligence");
 
   // ============================================================================
   // Register Financial Deep Dive Tool
@@ -152,14 +199,25 @@ export function createMcpServer(): McpServer {
       },
     },
     async ({ symbol }) => {
-      const result = await toolHandlers.get_financial_deep_dive(symbol);
-      return {
-        content: [
-          { type: "text" as const, text: JSON.stringify(result, null, 2) },
-        ],
-      };
+      log(
+        "debug",
+        `🔍 Executing get_financial_deep_dive for symbol: ${symbol}`
+      );
+      try {
+        const result = await toolHandlers.get_financial_deep_dive(symbol);
+        log("debug", `✅ get_financial_deep_dive completed for ${symbol}`);
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (error) {
+        log("error", `❌ get_financial_deep_dive failed for ${symbol}:`, error);
+        throw error;
+      }
     }
   );
+  log("info", "✅ Registered tool: get_financial_deep_dive");
 
   // ============================================================================
   // Register News and Research Tool
@@ -197,21 +255,45 @@ export function createMcpServer(): McpServer {
       },
     },
     async ({ action, symbol, query, url, count }) => {
-      const result = await toolHandlers.get_news_and_research(
-        action,
-        symbol,
-        query,
-        url,
-        count ?? 10
+      log(
+        "debug",
+        `🔍 Executing get_news_and_research - action: ${action}, symbol: ${symbol}, query: ${query}, count: ${
+          count ?? 10
+        }`
       );
-      return {
-        content: [
-          { type: "text" as const, text: JSON.stringify(result, null, 2) },
-        ],
-      };
+      try {
+        const result = await toolHandlers.get_news_and_research(
+          action,
+          symbol,
+          query,
+          url,
+          count ?? 10
+        );
+        log(
+          "debug",
+          `✅ get_news_and_research completed for action: ${action}`
+        );
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (error) {
+        log(
+          "error",
+          `❌ get_news_and_research failed for action ${action}:`,
+          error
+        );
+        throw error;
+      }
     }
   );
+  log("info", "✅ Registered tool: get_news_and_research");
 
+  log(
+    "info",
+    "🎉 MCP Server initialization complete - 5 tools registered and ready"
+  );
   return server;
 }
 
