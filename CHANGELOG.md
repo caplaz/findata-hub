@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2025-11-27
+
+### Changed
+
+- **Complete MCP SDK Migration**: Major architectural overhaul replacing custom MCP implementation with official `@modelcontextprotocol/sdk`
+  - **Tool Consolidation**: Reduced from 14 individual tools to 5 aggregated, comprehensive financial tools
+  - **Official SDK Integration**: Migrated to `StreamableHTTPServerTransport` for stateless HTTP request handling
+  - **Breaking Change**: Removed REST-style MCP endpoints (`/mcp/health`, `/mcp/tools`) for pure MCP protocol compliance
+  - **Protocol Compliance**: All MCP communication now uses official JSON-RPC protocol via single `POST /mcp` endpoint
+
+### Added
+
+- **Official MCP Dependencies**: Added `@modelcontextprotocol/sdk` v1.23.0 and `zod` v4.1.13 for schema validation
+- **Enhanced MCP Server Logging**: Comprehensive logging throughout MCP server lifecycle including initialization, tool execution, and error handling
+- **Pure MCP Protocol Support**: Full compliance with MCP 2024-11-05 specification supporting `initialize`, `tools/list`, `tools/call`, and `ping` methods
+
+### Removed
+
+- **Legacy MCP Endpoints**: Eliminated REST-style convenience endpoints (`GET /mcp/health`, `GET /mcp/tools`) redundant with MCP protocol methods
+- **Custom MCP Implementation**: Removed custom MCP server, transport, and tool registration logic
+
+### Improved
+
+- **MCP Tool Architecture**: Enhanced with official SDK patterns, Zod schema validation, and standardized error handling
+- **Documentation Updates**: Comprehensive refresh including MCP.md rewrite, README updates, and protocol examples
+
+### Technical Details
+
+- **Dependencies**: Added `@modelcontextprotocol/sdk` (^1.23.0) and `zod` (^4.1.13)
+- **Breaking Changes**: MCP clients must use official MCP protocol instead of REST endpoints
+- **Test Suite**: Reduced from 168 to 164 tests (removed health endpoint tests)
+- **Backward Compatibility**: REST API endpoints unchanged, only MCP interface affected
+- **Performance**: Maintained existing caching and performance optimizations
+
+### Migration Guide
+
+**For MCP Clients:**
+
+- Replace `GET /mcp/health` with `POST /mcp` using `{"method": "initialize"}`
+- Replace `GET /mcp/tools` with `POST /mcp` using `{"method": "tools/list"}`
+- Replace custom tool calling with `POST /mcp` using `{"method": "tools/call", "params": {...}}`
+- Use official MCP client libraries for seamless integration
+
+**For REST API Users:** No changes required - all REST endpoints remain unchanged
+
 ## [2.0.2] - 2025-11-26
 
 ### Fixed

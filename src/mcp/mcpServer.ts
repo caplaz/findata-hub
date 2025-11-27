@@ -5,6 +5,9 @@
  * @module mcp/mcpServer
  */
 
+import { readFileSync } from "fs";
+import { join } from "path";
+
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import * as z from "zod/v4";
 
@@ -18,9 +21,14 @@ import { toolHandlers } from "./handlers";
 export function createMcpServer(): McpServer {
   log("info", "🤖 Initializing MCP Server with @modelcontextprotocol/sdk");
 
+  // Read version from package.json
+  const packageJsonPath = join(process.cwd(), "package.json");
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+  const { version } = packageJson;
+
   const server = new McpServer({
     name: "yahoo-finance-mcp",
-    version: "2.0.2",
+    version,
   });
 
   log("info", "📊 Registering 5 financial data tools...");
