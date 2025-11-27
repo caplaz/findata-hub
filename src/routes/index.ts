@@ -11,7 +11,6 @@ import historyRoutes from "./history";
 import marketRoutes from "./market";
 import newsReaderRouter from "./newsReader";
 import quotesRoutes from "./quotes";
-import recommendationsRoutes from "./recommendations";
 import searchRoutes from "./search";
 import ticketRoutes from "./ticket";
 
@@ -48,13 +47,8 @@ router.use("/history", historyRoutes);
 router.use("/search", searchRoutes);
 
 /**
- * Stock recommendations routes
- */
-router.use("/recommendations", recommendationsRoutes);
-
-/**
  * Ticket (consolidated ticker-specific) routes
- * Includes: company info, financials, holdings, insights, events, statistics, and news
+ * Includes: company info, financials, holdings, insights, events, statistics, recommendations, and news
  */
 router.use("/ticket", ticketRoutes);
 

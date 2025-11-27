@@ -306,6 +306,53 @@ describe("Ticket Routes", () => {
     });
   });
 
+  describe("GET /ticket/:ticket/recommendations - Stock Recommendations", () => {
+    test("should return recommendations for valid symbol", async () => {
+      const res = await request(app).get("/ticket/AAPL/recommendations");
+
+      expect([200, 500]).toContain(res.status);
+      if (res.status === 200) {
+        expect(res.body).toHaveProperty("symbol");
+        expect(res.body).toHaveProperty("recommendedSymbols");
+        expect(Array.isArray(res.body.recommendedSymbols)).toBe(true);
+      }
+    });
+
+    test("should uppercase the ticket symbol", async () => {
+      const res = await request(app).get("/ticket/aapl/recommendations");
+
+      expect([200, 500]).toContain(res.status);
+      if (res.status === 200) {
+        expect(res.body).toHaveProperty("symbol");
+        expect(res.body.symbol).toBe("AAPL");
+      }
+    });
+
+    test("should handle multiple recommendations requests", async () => {
+      const res1 = await request(app).get("/ticket/AAPL/recommendations");
+      const res2 = await request(app).get("/ticket/MSFT/recommendations");
+
+      expect([200, 500]).toContain(res1.status);
+      expect([200, 500]).toContain(res2.status);
+      if (res1.status === 200) {
+        expect(res1.body).toHaveProperty("recommendedSymbols");
+      }
+      if (res2.status === 200) {
+        expect(res2.body).toHaveProperty("recommendedSymbols");
+      }
+    });
+
+    test("should return 404 for invalid symbol", async () => {
+      const res = await request(app).get(
+        "/ticket/INVALID_SYMBOL_XYZ123/recommendations"
+      );
+
+      expect(res.status).toBe(404);
+      expect(res.body).toHaveProperty("error");
+      expect(res.body.error).toContain("not found or invalid");
+    });
+  });
+
   describe("Route Collision Prevention", () => {
     test("should not match /ticket/:ticket to /ticket/:ticket/:type", async () => {
       const res1 = await request(app).get("/ticket/AAPL");

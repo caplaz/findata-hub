@@ -59,7 +59,6 @@ The server will be available at `http://localhost:3000` with API docs at `http:/
 - `GET /quote/:symbols` - Current stock quotes (multi-ticker support)
 - `GET /history/:symbols` - Historical price data (multi-ticker support)
 - `GET /search/:query` - Symbol and news search
-- `GET /recommendations/:symbol` - Similar stock recommendations
 - `GET /news-reader/*` - Article content extraction
 - `GET /ticket/:ticket` - Company information
 - `GET /ticket/:ticket/insights` - Comprehensive stock insights
@@ -67,6 +66,7 @@ The server will be available at `http://localhost:3000` with API docs at `http:/
 - `GET /ticket/:ticket/holdings` - ETF/mutual fund holdings
 - `GET /ticket/:ticket/events` - Calendar events, earnings, and earnings history
 - `GET /ticket/:ticket/statistics` - Key statistics and financial data
+- `GET /ticket/:ticket/recommendations` - Similar stock recommendations
 - `GET /ticket/:ticket/:type` - Financial statements (income, balance, cashflow)
 
 ### Market Data Endpoints

@@ -7,7 +7,12 @@
 import { Router, Request, Response } from "express";
 
 import { cache, CACHE_ENABLED } from "../config/cache";
-import type { QuoteSummaryResult, ErrorResponse, SearchNews } from "../types";
+import type {
+  QuoteSummaryResult,
+  ErrorResponse,
+  SearchNews,
+  RecommendationsBySymbolResponse,
+} from "../types";
 import { log } from "../utils/logger";
 import yahooFinance from "../yahoo";
 
@@ -308,6 +313,33 @@ async function getTicketStatistics(
   return result;
 }
 
+/**
+ * Get recommendations for a ticket
+ */
+async function getTicketRecommendations(
+  ticket: string
+): Promise<RecommendationsBySymbolResponse> {
+  const cacheKey = `recommendations:${ticket}`;
+
+  if (CACHE_ENABLED) {
+    const cached = await cache.get<RecommendationsBySymbolResponse>(cacheKey);
+    if (cached) {
+      log("debug", `Cache hit for ticket recommendations: ${ticket}`);
+      return cached;
+    }
+  }
+
+  log("debug", `Fetching recommendations for ${ticket}`);
+
+  const result = await yahooFinance.recommendationsBySymbol(ticket);
+
+  if (CACHE_ENABLED) {
+    await cache.set<RecommendationsBySymbolResponse>(cacheKey, result);
+  }
+
+  return result;
+}
+
 // ============================================================================
 // Endpoints
 // ============================================================================
@@ -596,6 +628,64 @@ router.get(
       res.json(result);
     } catch (err) {
       handleTicketError(res, ticket, "statistics", err);
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /ticket/{ticket}/recommendations:
+ *   get:
+ *     summary: Get similar stock recommendations
+ *     description: Retrieve recommended similar stocks for a ticket
+ *     tags: [Ticket]
+ *     parameters:
+ *       - in: path
+ *         name: ticket
+ *         required: true
+ *         description: Stock ticker symbol
+ *         schema:
+ *           type: string
+ *         example: "AAPL"
+ *     responses:
+ *       200:
+ *         description: Stock recommendations
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/RecommendationsResult'
+ *             example:
+ *               symbol: "AAPL"
+ *               recommendedSymbols: [{"symbol": "MSFT", "score": 0.9999}]
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get(
+  "/:ticket/recommendations",
+  async (
+    req: Request<TicketRouteParams>,
+    res: Response<RecommendationsBySymbolResponse | ErrorResponse>
+  ) => {
+    const ticket = req.params.ticket.toUpperCase();
+
+    // Validate symbol format
+    if (!isValidSymbol(ticket)) {
+      return res
+        .status(404)
+        .json({ error: `Symbol '${ticket}' not found or invalid` });
+    }
+
+    log("info", `Ticket recommendations request for: ${ticket} from ${req.ip}`);
+
+    try {
+      const result = await getTicketRecommendations(ticket);
+      res.json(result);
+    } catch (err) {
+      handleTicketError(res, ticket, "recommendations", err);
     }
   }
 );
