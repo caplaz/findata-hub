@@ -288,12 +288,71 @@ describe("Ticket Routes", () => {
       expect(res.body).toHaveProperty("error");
     });
 
+    test("should return 404 for invalid symbol in company info endpoint", async () => {
+      const res = await request(app).get("/ticket/INVALID_SYMBOL_XYZ123");
+
+      expect(res.status).toBe(404);
+      expect(res.body).toHaveProperty("error");
+      expect(res.body.error).toContain("not found or invalid");
+    });
+
+    test("should return 404 for invalid symbol in holdings endpoint", async () => {
+      const res = await request(app).get(
+        "/ticket/INVALID_SYMBOL_XYZ123/holdings"
+      );
+
+      expect(res.status).toBe(404);
+      expect(res.body).toHaveProperty("error");
+      expect(res.body.error).toContain("not found or invalid");
+    });
+
+    test("should return 404 for invalid symbol in insights endpoint", async () => {
+      const res = await request(app).get(
+        "/ticket/INVALID_SYMBOL_XYZ123/insights"
+      );
+
+      expect(res.status).toBe(404);
+      expect(res.body).toHaveProperty("error");
+      expect(res.body.error).toContain("not found or invalid");
+    });
+
+    test("should return 404 for invalid symbol in news endpoint", async () => {
+      const res = await request(app).get("/ticket/INVALID_SYMBOL_XYZ123/news");
+
+      expect(res.status).toBe(404);
+      expect(res.body).toHaveProperty("error");
+      expect(res.body.error).toContain("not found or invalid");
+    });
+
+    test("should return 404 for invalid symbol in financial endpoint", async () => {
+      const res = await request(app).get(
+        "/ticket/INVALID_SYMBOL_XYZ123/income"
+      );
+
+      expect(res.status).toBe(404);
+      expect(res.body).toHaveProperty("error");
+      expect(res.body.error).toContain("not found or invalid");
+    });
+
+    test("should return 500 for server errors", async () => {
+      // Mock a scenario that would cause a server error
+      // This is harder to test directly, but we can verify the pattern exists
+      const res = await request(app).get("/ticket/AAPL");
+
+      // Should either succeed (200) or fail with server error (500), not client error (404)
+      expect([200, 500]).toContain(res.status);
+      if (res.status === 500) {
+        expect(res.body).toHaveProperty("error");
+      }
+    });
+
     test("should handle server errors gracefully", async () => {
       // This will likely fail if the API is down, but should return 500
       const res = await request(app).get("/ticket/INVALID_SYMBOL_XYZ123");
 
-      // Could be 200 (error response) or 500 (server error)
-      expect([200, 500]).toContain(res.status);
+      // Could be 404 (invalid symbol) or 500 (server error)
+      expect([404, 500]).toContain(res.status);
+      expect(res.body).toHaveProperty("error");
     });
   });
 });

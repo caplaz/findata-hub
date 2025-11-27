@@ -34,6 +34,49 @@ interface NewsQueryParams {
 // ============================================================================
 
 /**
+ * Validate if a ticker symbol appears to be valid
+ */
+function isValidSymbol(symbol: string): boolean {
+  // Basic validation: 1-10 characters, letters/numbers/dots only, no underscores
+  return /^[A-Z0-9.]{1,10}$/.test(symbol) && !symbol.includes("_");
+}
+
+/**
+ * Handle standardized error responses for ticket endpoints
+ */
+function handleTicketError(
+  res: Response<ErrorResponse>,
+  ticket: string,
+  endpointName: string,
+  err: unknown,
+  additionalErrorChecks: string[] = []
+): void {
+  const errorMessage = err instanceof Error ? err.message : String(err);
+  log(
+    "error",
+    `Ticket ${endpointName} endpoint error for ${ticket}: ${errorMessage}`,
+    err
+  );
+
+  // Check for invalid symbol errors (404) or other errors (500)
+  const invalidSymbolPatterns = [
+    "No fundamentals data found for symbol",
+    "Quote not found for symbol",
+    ...additionalErrorChecks,
+  ];
+
+  const isInvalidSymbol = invalidSymbolPatterns.some((pattern) =>
+    errorMessage.includes(pattern)
+  );
+
+  if (isInvalidSymbol) {
+    res.status(404).json({ error: `Symbol '${ticket}' not found or invalid` });
+  } else {
+    res.status(500).json({ error: errorMessage });
+  }
+}
+
+/**
  * Get company info for a single ticket
  */
 async function getTicketInfo(ticket: string): Promise<QuoteSummaryResult> {
@@ -250,20 +293,20 @@ router.get(
   ) => {
     const ticket = req.params.ticket.toUpperCase();
 
+    // Validate symbol format
+    if (!isValidSymbol(ticket)) {
+      return res
+        .status(404)
+        .json({ error: `Symbol '${ticket}' not found or invalid` });
+    }
+
     log("info", `Ticket holdings request for: ${ticket} from ${req.ip}`);
 
     try {
       const result = await getTicketHoldings(ticket);
       res.json(result);
     } catch (err) {
-      log(
-        "error",
-        `Ticket holdings endpoint error for ${ticket}: ${
-          (err as Error).message
-        }`,
-        err
-      );
-      res.status(500).json({ error: (err as Error).message });
+      handleTicketError(res, ticket, "holdings", err);
     }
   }
 );
@@ -305,20 +348,20 @@ router.get(
   ) => {
     const ticket = req.params.ticket.toUpperCase();
 
+    // Validate symbol format
+    if (!isValidSymbol(ticket)) {
+      return res
+        .status(404)
+        .json({ error: `Symbol '${ticket}' not found or invalid` });
+    }
+
     log("info", `Ticket insights request for: ${ticket} from ${req.ip}`);
 
     try {
       const result = await getTicketInsights(ticket);
       res.json(result);
     } catch (err) {
-      log(
-        "error",
-        `Ticket insights endpoint error for ${ticket}: ${
-          (err as Error).message
-        }`,
-        err
-      );
-      res.status(500).json({ error: (err as Error).message });
+      handleTicketError(res, ticket, "insights", err);
     }
   }
 );
@@ -371,18 +414,22 @@ router.get(
     const ticket = req.params.ticket.toUpperCase();
     const count = parseInt(req.query.count || "10", 10);
 
+    // Validate symbol format
+    if (!isValidSymbol(ticket)) {
+      return res
+        .status(404)
+        .json({ error: `Symbol '${ticket}' not found or invalid` });
+    }
+
     log("info", `Ticket news request for: ${ticket} from ${req.ip}`);
 
     try {
       const result = await getTicketNews(ticket, count);
       res.json(result);
     } catch (err) {
-      log(
-        "error",
-        `Ticket news endpoint error for ${ticket}: ${(err as Error).message}`,
-        err
-      );
-      res.status(500).json({ error: (err as Error).message });
+      handleTicketError(res, ticket, "news", err, [
+        "Missing required query parameter",
+      ]);
     }
   }
 );
@@ -451,6 +498,13 @@ router.get(
     const type = req.params.type.toLowerCase();
     const period = (req.query.period || "annual") as "annual" | "quarterly";
 
+    // Validate symbol format
+    if (!isValidSymbol(ticket)) {
+      return res
+        .status(404)
+        .json({ error: `Symbol '${ticket}' not found or invalid` });
+    }
+
     log(
       "info",
       `Ticket financial request for: ${ticket}/${type} from ${req.ip}`
@@ -480,14 +534,7 @@ router.get(
       );
       res.json(result);
     } catch (err) {
-      log(
-        "error",
-        `Ticket financial endpoint error for ${ticket}/${type}: ${
-          (err as Error).message
-        }`,
-        err
-      );
-      res.status(500).json({ error: (err as Error).message });
+      handleTicketError(res, ticket, "financial", err);
     }
   }
 );
@@ -529,20 +576,25 @@ router.get(
   ) => {
     const ticket = req.params.ticket.toUpperCase();
 
+    // Validate symbol format
+    if (!isValidSymbol(ticket)) {
+      return res
+        .status(404)
+        .json({ error: `Symbol '${ticket}' not found or invalid` });
+    }
+
     log("info", `Ticket info request for: ${ticket} from ${req.ip}`);
 
     try {
       const result = await getTicketInfo(ticket);
       res.json(result);
     } catch (err) {
-      log(
-        "error",
-        `Ticket info endpoint error for ${ticket}: ${(err as Error).message}`,
-        err
-      );
-      res.status(500).json({ error: (err as Error).message });
+      handleTicketError(res, ticket, "info", err);
     }
   }
 );
 
 export default router;
+
+// Export for testing
+export { handleTicketError };
