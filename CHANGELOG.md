@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2025-11-27
+
+### Added
+
+- **Fear & Greed Index Integration**: Enhanced `/market/sentiment` endpoint with real-time market sentiment data
+
+  - **Alternative.me API Integration**: Fetches Fear & Greed Index data from Alternative.me API
+  - **Comprehensive Sentiment Data**: Returns VIX volatility index alongside Fear & Greed Index
+  - **Graceful Error Handling**: Continues to function even if external API is unavailable
+  - **Type-Safe Implementation**: Added `FearGreedIndex` and `MarketSentiment` TypeScript interfaces
+  - **Updated Swagger Documentation**: Complete OpenAPI schemas for new sentiment data structures
+
+### Improved
+
+- **Code Quality**: Enhanced import organization and linting compliance
+  - **Import Consolidation**: Moved all imports to top of files following ESLint rules
+  - **Modern Node.js**: Replaced `node-fetch` dependency with native Node.js 18+ `fetch` API
+  - **TypeScript Declarations**: Added proper type declarations for global fetch function
+
+### Technical Details
+
+- **New Dependencies**: None added (removed `node-fetch` dependency)
+- **API Compatibility**: Fully backward compatible - existing sentiment endpoint responses enhanced
+- **Test Coverage**: Added 4 comprehensive tests for Fear & Greed Index functionality
+- **Performance**: Minimal impact with external API fallback and caching support
+- **Error Resilience**: Sentiment endpoint continues working even if Fear & Greed API fails
+
+### Migration Notes
+
+- **For API Consumers**: No breaking changes - sentiment endpoint now returns additional Fear & Greed Index data
+- **For Developers**: Code now uses native Node.js `fetch` instead of `node-fetch` package
+
 ## [3.0.0] - 2025-11-27
 
 ### Changed
