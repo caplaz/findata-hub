@@ -1,7 +1,7 @@
 /**
- * Ticket Routes module
+ * Ticker Routes module
  * Consolidated ticker-specific endpoints
- * @module routes/ticket
+ * @module routes/ticker
  */
 
 import { Router, Request, Response } from "express";
@@ -22,8 +22,8 @@ const router = Router();
 // Route Types
 // ============================================================================
 
-interface TicketRouteParams {
-  ticket: string;
+interface TickerRouteParams {
+  ticker: string;
 }
 
 interface FinancialQueryParams {
@@ -47,11 +47,11 @@ function isValidSymbol(symbol: string): boolean {
 }
 
 /**
- * Handle standardized error responses for ticket endpoints
+ * Handle standardized error responses for ticker endpoints
  */
-function handleTicketError(
+function handleTickerError(
   res: Response<ErrorResponse>,
-  ticket: string,
+  ticker: string,
   endpointName: string,
   err: unknown,
   additionalErrorChecks: string[] = []
@@ -59,7 +59,7 @@ function handleTicketError(
   const errorMessage = err instanceof Error ? err.message : String(err);
   log(
     "error",
-    `Ticket ${endpointName} endpoint error for ${ticket}: ${errorMessage}`,
+    `Ticker ${endpointName} endpoint error for ${ticker}: ${errorMessage}`,
     err
   );
 
@@ -75,28 +75,28 @@ function handleTicketError(
   );
 
   if (isInvalidSymbol) {
-    res.status(404).json({ error: `Symbol '${ticket}' not found or invalid` });
+    res.status(404).json({ error: `Symbol '${ticker}' not found or invalid` });
   } else {
     res.status(500).json({ error: errorMessage });
   }
 }
 
 /**
- * Get company info for a single ticket
+ * Get company info for a single ticker
  */
-async function getTicketInfo(ticket: string): Promise<QuoteSummaryResult> {
-  const cacheKey = `ticket:info:${ticket}`;
+async function getTickerInfo(ticker: string): Promise<QuoteSummaryResult> {
+  const cacheKey = `ticker:info:${ticker}`;
 
   if (CACHE_ENABLED) {
     const cached = await cache.get<QuoteSummaryResult>(cacheKey);
     if (cached) {
-      log("debug", `Cache hit for ticket info: ${ticket}`);
+      log("debug", `Cache hit for ticker info: ${ticker}`);
       return cached;
     }
   }
 
-  log("debug", `Fetching company info for ${ticket}`);
-  const result = await yahooFinance.quoteSummary(ticket, {
+  log("debug", `Fetching company info for ${ticker}`);
+  const result = await yahooFinance.quoteSummary(ticker, {
     modules: ["assetProfile"],
   });
 
@@ -108,10 +108,10 @@ async function getTicketInfo(ticket: string): Promise<QuoteSummaryResult> {
 }
 
 /**
- * Get financial statements for a ticket
+ * Get financial statements for a ticker
  */
-async function getTicketFinancials(
-  ticket: string,
+async function getTickerFinancials(
+  ticker: string,
   type: "income" | "balance" | "cashflow",
   period: "annual" | "quarterly" = "annual"
 ): Promise<QuoteSummaryResult> {
@@ -127,24 +127,24 @@ async function getTicketFinancials(
     );
   }
 
-  const cacheKey = `ticket:financial:${ticket}:${type}:${period}`;
+  const cacheKey = `ticker:financial:${ticker}:${type}:${period}`;
 
   if (CACHE_ENABLED) {
     const cached = await cache.get<QuoteSummaryResult>(cacheKey);
     if (cached) {
-      log("debug", `Cache hit for ticket financial: ${ticket}:${type}`);
+      log("debug", `Cache hit for ticker financial: ${ticker}:${type}`);
       return cached;
     }
   }
 
-  log("debug", `Fetching ${period} ${type} for ${ticket}`);
+  log("debug", `Fetching ${period} ${type} for ${ticker}`);
 
   const moduleName = moduleMap[type];
   const options: Record<string, string[]> = {
     modules: [moduleName],
   };
 
-  const result = await yahooFinance.quoteSummary(ticket, options);
+  const result = await yahooFinance.quoteSummary(ticker, options);
 
   if (CACHE_ENABLED) {
     await cache.set<QuoteSummaryResult>(cacheKey, result);
@@ -154,23 +154,23 @@ async function getTicketFinancials(
 }
 
 /**
- * Get holdings for a ticket
+ * Get holdings for a ticker
  */
-async function getTicketHoldings(ticket: string): Promise<QuoteSummaryResult> {
-  const cacheKey = `ticket:holdings:${ticket}`;
+async function getTickerHoldings(ticker: string): Promise<QuoteSummaryResult> {
+  const cacheKey = `ticker:holdings:${ticker}`;
 
   if (CACHE_ENABLED) {
     const cached = await cache.get<QuoteSummaryResult>(cacheKey);
     if (cached) {
-      log("debug", `Cache hit for ticket holdings: ${ticket}`);
+      log("debug", `Cache hit for ticker holdings: ${ticker}`);
       return cached;
     }
   }
 
-  log("debug", `Fetching holdings for ${ticket}`);
+  log("debug", `Fetching holdings for ${ticker}`);
 
   try {
-    const result = await yahooFinance.quoteSummary(ticket, {
+    const result = await yahooFinance.quoteSummary(ticker, {
       modules: ["topHoldings", "fundProfile"],
     });
 
@@ -182,33 +182,33 @@ async function getTicketHoldings(ticket: string): Promise<QuoteSummaryResult> {
   } catch (error) {
     log(
       "warn",
-      `Holdings fetch failed for ${ticket}, trying fallback: ${
+      `Holdings fetch failed for ${ticker}, trying fallback: ${
         (error as Error).message
       }`
     );
     // Fallback to basic quote data
-    const fallback = await yahooFinance.quote(ticket);
+    const fallback = await yahooFinance.quote(ticker);
     return fallback as unknown as QuoteSummaryResult;
   }
 }
 
 /**
- * Get insights for a ticket
+ * Get insights for a ticker
  */
-async function getTicketInsights(ticket: string): Promise<QuoteSummaryResult> {
-  const cacheKey = `ticket:insights:${ticket}`;
+async function getTickerInsights(ticker: string): Promise<QuoteSummaryResult> {
+  const cacheKey = `ticker:insights:${ticker}`;
 
   if (CACHE_ENABLED) {
     const cached = await cache.get<QuoteSummaryResult>(cacheKey);
     if (cached) {
-      log("debug", `Cache hit for ticket insights: ${ticket}`);
+      log("debug", `Cache hit for ticker insights: ${ticker}`);
       return cached;
     }
   }
 
-  log("debug", `Fetching insights for ${ticket}`);
+  log("debug", `Fetching insights for ${ticker}`);
 
-  const result = await yahooFinance.quoteSummary(ticket, {
+  const result = await yahooFinance.quoteSummary(ticker, {
     modules: [
       "recommendationTrend",
       "upgradeDowngradeHistory",
@@ -225,26 +225,26 @@ async function getTicketInsights(ticket: string): Promise<QuoteSummaryResult> {
 }
 
 /**
- * Get news for a ticket
+ * Get news for a ticker
  */
-async function getTicketNews(
-  ticket: string,
+async function getTickerNews(
+  ticker: string,
   count: number = 10
 ): Promise<SearchNews[]> {
   const limitedCount = Math.min(count || 10, 50);
-  const cacheKey = `ticket:news:${ticket}:${limitedCount}`;
+  const cacheKey = `ticker:news:${ticker}:${limitedCount}`;
 
   if (CACHE_ENABLED) {
     const cached = await cache.get<SearchNews[]>(cacheKey);
     if (cached) {
-      log("debug", `Cache hit for ticket news: ${ticket}`);
+      log("debug", `Cache hit for ticker news: ${ticker}`);
       return cached;
     }
   }
 
-  log("debug", `Fetching news for ${ticket}`);
+  log("debug", `Fetching news for ${ticker}`);
 
-  const searchResult = await yahooFinance.search(ticket, {
+  const searchResult = await yahooFinance.search(ticker, {
     newsCount: limitedCount,
   });
 
@@ -258,22 +258,22 @@ async function getTicketNews(
 }
 
 /**
- * Get calendar events for a ticket
+ * Get calendar events for a ticker
  */
-async function getTicketEvents(ticket: string): Promise<QuoteSummaryResult> {
-  const cacheKey = `ticket:events:${ticket}`;
+async function getTickerEvents(ticker: string): Promise<QuoteSummaryResult> {
+  const cacheKey = `ticker:events:${ticker}`;
 
   if (CACHE_ENABLED) {
     const cached = await cache.get<QuoteSummaryResult>(cacheKey);
     if (cached) {
-      log("debug", `Cache hit for ticket events: ${ticket}`);
+      log("debug", `Cache hit for ticker events: ${ticker}`);
       return cached;
     }
   }
 
-  log("debug", `Fetching calendar events for ${ticket}`);
+  log("debug", `Fetching calendar events for ${ticker}`);
 
-  const result = await yahooFinance.quoteSummary(ticket, {
+  const result = await yahooFinance.quoteSummary(ticker, {
     modules: ["calendarEvents", "earnings", "earningsHistory"],
   });
 
@@ -285,24 +285,24 @@ async function getTicketEvents(ticket: string): Promise<QuoteSummaryResult> {
 }
 
 /**
- * Get key statistics for a ticket
+ * Get key statistics for a ticker
  */
-async function getTicketStatistics(
-  ticket: string
+async function getTickerStatistics(
+  ticker: string
 ): Promise<QuoteSummaryResult> {
-  const cacheKey = `ticket:statistics:${ticket}`;
+  const cacheKey = `ticker:statistics:${ticker}`;
 
   if (CACHE_ENABLED) {
     const cached = await cache.get<QuoteSummaryResult>(cacheKey);
     if (cached) {
-      log("debug", `Cache hit for ticket statistics: ${ticket}`);
+      log("debug", `Cache hit for ticker statistics: ${ticker}`);
       return cached;
     }
   }
 
-  log("debug", `Fetching key statistics for ${ticket}`);
+  log("debug", `Fetching key statistics for ${ticker}`);
 
-  const result = await yahooFinance.quoteSummary(ticket, {
+  const result = await yahooFinance.quoteSummary(ticker, {
     modules: ["defaultKeyStatistics", "financialData"],
   });
 
@@ -314,24 +314,24 @@ async function getTicketStatistics(
 }
 
 /**
- * Get recommendations for a ticket
+ * Get recommendations for a ticker
  */
-async function getTicketRecommendations(
-  ticket: string
+async function getTickerRecommendations(
+  ticker: string
 ): Promise<RecommendationsBySymbolResponse> {
-  const cacheKey = `recommendations:${ticket}`;
+  const cacheKey = `recommendations:${ticker}`;
 
   if (CACHE_ENABLED) {
     const cached = await cache.get<RecommendationsBySymbolResponse>(cacheKey);
     if (cached) {
-      log("debug", `Cache hit for ticket recommendations: ${ticket}`);
+      log("debug", `Cache hit for ticker recommendations: ${ticker}`);
       return cached;
     }
   }
 
-  log("debug", `Fetching recommendations for ${ticket}`);
+  log("debug", `Fetching recommendations for ${ticker}`);
 
-  const result = await yahooFinance.recommendationsBySymbol(ticket);
+  const result = await yahooFinance.recommendationsBySymbol(ticker);
 
   if (CACHE_ENABLED) {
     await cache.set<RecommendationsBySymbolResponse>(cacheKey, result);
@@ -346,14 +346,14 @@ async function getTicketRecommendations(
 
 /**
  * @swagger
- * /ticket/{ticket}/holdings:
+ * /ticker/{ticker}/holdings:
  *   get:
  *     summary: Get holdings data
- *     description: Retrieve holdings and composition data for a ticket
- *     tags: [Ticket]
+ *     description: Retrieve holdings and composition data for a ticker
+ *     tags: [Ticker]
  *     parameters:
  *       - in: path
- *         name: ticket
+ *         name: ticker
  *         required: true
  *         description: Stock ticker symbol (ETF or mutual fund)
  *         schema:
@@ -374,41 +374,41 @@ async function getTicketRecommendations(
  *               $ref: '#/components/schemas/Error'
  */
 router.get(
-  "/:ticket/holdings",
+  "/:ticker/holdings",
   async (
-    req: Request<TicketRouteParams>,
+    req: Request<TickerRouteParams>,
     res: Response<QuoteSummaryResult | ErrorResponse>
   ) => {
-    const ticket = req.params.ticket.toUpperCase();
+    const ticker = req.params.ticker.toUpperCase();
 
     // Validate symbol format
-    if (!isValidSymbol(ticket)) {
+    if (!isValidSymbol(ticker)) {
       return res
         .status(404)
-        .json({ error: `Symbol '${ticket}' not found or invalid` });
+        .json({ error: `Symbol '${ticker}' not found or invalid` });
     }
 
-    log("info", `Ticket holdings request for: ${ticket} from ${req.ip}`);
+    log("info", `Ticker holdings request for: ${ticker} from ${req.ip}`);
 
     try {
-      const result = await getTicketHoldings(ticket);
+      const result = await getTickerHoldings(ticker);
       res.json(result);
     } catch (err) {
-      handleTicketError(res, ticket, "holdings", err);
+      handleTickerError(res, ticker, "holdings", err);
     }
   }
 );
 
 /**
  * @swagger
- * /ticket/{ticket}/insights:
+ * /ticker/{ticker}/insights:
  *   get:
  *     summary: Get stock insights
- *     description: Retrieve comprehensive insights and analysis for a ticket
- *     tags: [Ticket]
+ *     description: Retrieve comprehensive insights and analysis for a ticker
+ *     tags: [Ticker]
  *     parameters:
  *       - in: path
- *         name: ticket
+ *         name: ticker
  *         required: true
  *         description: Stock ticker symbol
  *         schema:
@@ -429,41 +429,41 @@ router.get(
  *               $ref: '#/components/schemas/Error'
  */
 router.get(
-  "/:ticket/insights",
+  "/:ticker/insights",
   async (
-    req: Request<TicketRouteParams>,
+    req: Request<TickerRouteParams>,
     res: Response<QuoteSummaryResult | ErrorResponse>
   ) => {
-    const ticket = req.params.ticket.toUpperCase();
+    const ticker = req.params.ticker.toUpperCase();
 
     // Validate symbol format
-    if (!isValidSymbol(ticket)) {
+    if (!isValidSymbol(ticker)) {
       return res
         .status(404)
-        .json({ error: `Symbol '${ticket}' not found or invalid` });
+        .json({ error: `Symbol '${ticker}' not found or invalid` });
     }
 
-    log("info", `Ticket insights request for: ${ticket} from ${req.ip}`);
+    log("info", `Ticker insights request for: ${ticker} from ${req.ip}`);
 
     try {
-      const result = await getTicketInsights(ticket);
+      const result = await getTickerInsights(ticker);
       res.json(result);
     } catch (err) {
-      handleTicketError(res, ticket, "insights", err);
+      handleTickerError(res, ticker, "insights", err);
     }
   }
 );
 
 /**
  * @swagger
- * /ticket/{ticket}/news:
+ * /ticker/{ticker}/news:
  *   get:
- *     summary: Get news for a ticket
- *     description: Retrieve latest news articles for a ticket
- *     tags: [Ticket]
+ *     summary: Get news for a ticker
+ *     description: Retrieve latest news articles for a ticker
+ *     tags: [Ticker]
  *     parameters:
  *       - in: path
- *         name: ticket
+ *         name: ticker
  *         required: true
  *         description: Stock ticker symbol
  *         schema:
@@ -494,28 +494,28 @@ router.get(
  *               $ref: '#/components/schemas/Error'
  */
 router.get(
-  "/:ticket/news",
+  "/:ticker/news",
   async (
-    req: Request<TicketRouteParams, SearchNews[], unknown, NewsQueryParams>,
+    req: Request<TickerRouteParams, SearchNews[], unknown, NewsQueryParams>,
     res: Response<SearchNews[] | ErrorResponse>
   ) => {
-    const ticket = req.params.ticket.toUpperCase();
+    const ticker = req.params.ticker.toUpperCase();
     const count = parseInt(req.query.count || "10", 10);
 
     // Validate symbol format
-    if (!isValidSymbol(ticket)) {
+    if (!isValidSymbol(ticker)) {
       return res
         .status(404)
-        .json({ error: `Symbol '${ticket}' not found or invalid` });
+        .json({ error: `Symbol '${ticker}' not found or invalid` });
     }
 
-    log("info", `Ticket news request for: ${ticket} from ${req.ip}`);
+    log("info", `Ticker news request for: ${ticker} from ${req.ip}`);
 
     try {
-      const result = await getTicketNews(ticket, count);
+      const result = await getTickerNews(ticker, count);
       res.json(result);
     } catch (err) {
-      handleTicketError(res, ticket, "news", err, [
+      handleTickerError(res, ticker, "news", err, [
         "Missing required query parameter",
       ]);
     }
@@ -524,14 +524,14 @@ router.get(
 
 /**
  * @swagger
- * /ticket/{ticket}/events:
+ * /ticker/{ticker}/events:
  *   get:
- *     summary: Get calendar events for a ticket
- *     description: Retrieve important dates and events for a ticket including earnings dates, dividend dates, and earnings estimates
- *     tags: [Ticket]
+ *     summary: Get calendar events for a ticker
+ *     description: Retrieve important dates and events for a ticker including earnings dates, dividend dates, and earnings estimates
+ *     tags: [Ticker]
  *     parameters:
  *       - in: path
- *         name: ticket
+ *         name: ticker
  *         required: true
  *         description: Stock ticker symbol
  *         schema:
@@ -552,41 +552,41 @@ router.get(
  *               $ref: '#/components/schemas/Error'
  */
 router.get(
-  "/:ticket/events",
+  "/:ticker/events",
   async (
-    req: Request<TicketRouteParams>,
+    req: Request<TickerRouteParams>,
     res: Response<QuoteSummaryResult | ErrorResponse>
   ) => {
-    const ticket = req.params.ticket.toUpperCase();
+    const ticker = req.params.ticker.toUpperCase();
 
     // Validate symbol format
-    if (!isValidSymbol(ticket)) {
+    if (!isValidSymbol(ticker)) {
       return res
         .status(404)
-        .json({ error: `Symbol '${ticket}' not found or invalid` });
+        .json({ error: `Symbol '${ticker}' not found or invalid` });
     }
 
-    log("info", `Ticket events request for: ${ticket} from ${req.ip}`);
+    log("info", `Ticker events request for: ${ticker} from ${req.ip}`);
 
     try {
-      const result = await getTicketEvents(ticket);
+      const result = await getTickerEvents(ticker);
       res.json(result);
     } catch (err) {
-      handleTicketError(res, ticket, "events", err);
+      handleTickerError(res, ticker, "events", err);
     }
   }
 );
 
 /**
  * @swagger
- * /ticket/{ticket}/statistics:
+ * /ticker/{ticker}/statistics:
  *   get:
- *     summary: Get key statistics for a ticket
- *     description: Retrieve key financial statistics and metrics for a ticket
- *     tags: [Ticket]
+ *     summary: Get key statistics for a ticker
+ *     description: Retrieve key financial statistics and metrics for a ticker
+ *     tags: [Ticker]
  *     parameters:
  *       - in: path
- *         name: ticket
+ *         name: ticker
  *         required: true
  *         description: Stock ticker symbol
  *         schema:
@@ -607,41 +607,41 @@ router.get(
  *               $ref: '#/components/schemas/Error'
  */
 router.get(
-  "/:ticket/statistics",
+  "/:ticker/statistics",
   async (
-    req: Request<TicketRouteParams>,
+    req: Request<TickerRouteParams>,
     res: Response<QuoteSummaryResult | ErrorResponse>
   ) => {
-    const ticket = req.params.ticket.toUpperCase();
+    const ticker = req.params.ticker.toUpperCase();
 
     // Validate symbol format
-    if (!isValidSymbol(ticket)) {
+    if (!isValidSymbol(ticker)) {
       return res
         .status(404)
-        .json({ error: `Symbol '${ticket}' not found or invalid` });
+        .json({ error: `Symbol '${ticker}' not found or invalid` });
     }
 
-    log("info", `Ticket statistics request for: ${ticket} from ${req.ip}`);
+    log("info", `Ticker statistics request for: ${ticker} from ${req.ip}`);
 
     try {
-      const result = await getTicketStatistics(ticket);
+      const result = await getTickerStatistics(ticker);
       res.json(result);
     } catch (err) {
-      handleTicketError(res, ticket, "statistics", err);
+      handleTickerError(res, ticker, "statistics", err);
     }
   }
 );
 
 /**
  * @swagger
- * /ticket/{ticket}/recommendations:
+ * /ticker/{ticker}/recommendations:
  *   get:
  *     summary: Get similar stock recommendations
- *     description: Retrieve recommended similar stocks for a ticket
- *     tags: [Ticket]
+ *     description: Retrieve recommended similar stocks for a ticker
+ *     tags: [Ticker]
  *     parameters:
  *       - in: path
- *         name: ticket
+ *         name: ticker
  *         required: true
  *         description: Stock ticker symbol
  *         schema:
@@ -665,41 +665,41 @@ router.get(
  *               $ref: '#/components/schemas/Error'
  */
 router.get(
-  "/:ticket/recommendations",
+  "/:ticker/recommendations",
   async (
-    req: Request<TicketRouteParams>,
+    req: Request<TickerRouteParams>,
     res: Response<RecommendationsBySymbolResponse | ErrorResponse>
   ) => {
-    const ticket = req.params.ticket.toUpperCase();
+    const ticker = req.params.ticker.toUpperCase();
 
     // Validate symbol format
-    if (!isValidSymbol(ticket)) {
+    if (!isValidSymbol(ticker)) {
       return res
         .status(404)
-        .json({ error: `Symbol '${ticket}' not found or invalid` });
+        .json({ error: `Symbol '${ticker}' not found or invalid` });
     }
 
-    log("info", `Ticket recommendations request for: ${ticket} from ${req.ip}`);
+    log("info", `Ticker recommendations request for: ${ticker} from ${req.ip}`);
 
     try {
-      const result = await getTicketRecommendations(ticket);
+      const result = await getTickerRecommendations(ticker);
       res.json(result);
     } catch (err) {
-      handleTicketError(res, ticket, "recommendations", err);
+      handleTickerError(res, ticker, "recommendations", err);
     }
   }
 );
 
 /**
  * @swagger
- * /ticket/{ticket}/{type}:
+ * /ticker/{ticker}/{type}:
  *   get:
  *     summary: Get financial statements
- *     description: Retrieve financial statements for a ticket
- *     tags: [Ticket]
+ *     description: Retrieve financial statements for a ticker
+ *     tags: [Ticker]
  *     parameters:
  *       - in: path
- *         name: ticket
+ *         name: ticker
  *         required: true
  *         description: Stock ticker symbol
  *         schema:
@@ -740,30 +740,30 @@ router.get(
  *               $ref: '#/components/schemas/Error'
  */
 router.get(
-  "/:ticket/:type",
+  "/:ticker/:type",
   async (
     req: Request<
-      TicketRouteParams & { type: string },
+      TickerRouteParams & { type: string },
       Record<string, unknown>,
       unknown,
       FinancialQueryParams
     >,
     res: Response<QuoteSummaryResult | ErrorResponse>
   ) => {
-    const ticket = req.params.ticket.toUpperCase();
+    const ticker = req.params.ticker.toUpperCase();
     const type = req.params.type.toLowerCase();
     const period = (req.query.period || "annual") as "annual" | "quarterly";
 
     // Validate symbol format
-    if (!isValidSymbol(ticket)) {
+    if (!isValidSymbol(ticker)) {
       return res
         .status(404)
-        .json({ error: `Symbol '${ticket}' not found or invalid` });
+        .json({ error: `Symbol '${ticker}' not found or invalid` });
     }
 
     log(
       "info",
-      `Ticket financial request for: ${ticket}/${type} from ${req.ip}`
+      `Ticker financial request for: ${ticker}/${type} from ${req.ip}`
     );
 
     // Validate type
@@ -783,28 +783,28 @@ router.get(
     }
 
     try {
-      const result = await getTicketFinancials(
-        ticket,
+      const result = await getTickerFinancials(
+        ticker,
         type as "income" | "balance" | "cashflow",
         period
       );
       res.json(result);
     } catch (err) {
-      handleTicketError(res, ticket, "financial", err);
+      handleTickerError(res, ticker, "financial", err);
     }
   }
 );
 
 /**
  * @swagger
- * /ticket/{ticket}:
+ * /ticker/{ticker}:
  *   get:
  *     summary: Get company information
- *     description: Retrieve company information and profile for a ticket
- *     tags: [Ticket]
+ *     description: Retrieve company information and profile for a ticker
+ *     tags: [Ticker]
  *     parameters:
  *       - in: path
- *         name: ticket
+ *         name: ticker
  *         required: true
  *         description: Stock ticker symbol
  *         schema:
@@ -825,27 +825,27 @@ router.get(
  *               $ref: '#/components/schemas/Error'
  */
 router.get(
-  "/:ticket",
+  "/:ticker",
   async (
-    req: Request<TicketRouteParams>,
+    req: Request<TickerRouteParams>,
     res: Response<QuoteSummaryResult | ErrorResponse>
   ) => {
-    const ticket = req.params.ticket.toUpperCase();
+    const ticker = req.params.ticker.toUpperCase();
 
     // Validate symbol format
-    if (!isValidSymbol(ticket)) {
+    if (!isValidSymbol(ticker)) {
       return res
         .status(404)
-        .json({ error: `Symbol '${ticket}' not found or invalid` });
+        .json({ error: `Symbol '${ticker}' not found or invalid` });
     }
 
-    log("info", `Ticket info request for: ${ticket} from ${req.ip}`);
+    log("info", `Ticker info request for: ${ticker} from ${req.ip}`);
 
     try {
-      const result = await getTicketInfo(ticket);
+      const result = await getTickerInfo(ticker);
       res.json(result);
     } catch (err) {
-      handleTicketError(res, ticket, "info", err);
+      handleTickerError(res, ticker, "info", err);
     }
   }
 );
@@ -853,4 +853,4 @@ router.get(
 export default router;
 
 // Export for testing
-export { handleTicketError };
+export { handleTickerError };

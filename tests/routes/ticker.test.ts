@@ -1,65 +1,65 @@
 /**
- * Ticket Routes Tests
+ * Ticker Routes Tests
  * Tests for consolidated ticker-specific endpoints
- * @module tests/routes/ticket
+ * @module tests/routes/ticker
  */
 
 import request from "supertest";
 import express from "express";
-import ticketRoutes from "../../src/routes/ticket";
+import tickerRoutes from "../../src/routes/ticker";
 
 const app = express();
 app.use(express.json());
-app.use("/ticket", ticketRoutes);
+app.use("/ticker", tickerRoutes);
 app.use((err: any, req: any, res: any, next: any) =>
   res.status(500).json({ error: "Internal server error" })
 );
 
-describe("Ticket Routes", () => {
-  describe("GET /ticket/:ticket - Company Info", () => {
+describe("Ticker Routes", () => {
+  describe("GET /ticker/:ticker - Company Info", () => {
     test("should return 200 for valid symbol", async () => {
-      const res = await request(app).get("/ticket/AAPL");
+      const res = await request(app).get("/ticker/AAPL");
 
       expect([200, 500]).toContain(res.status);
     });
 
-    test("should uppercase the ticket symbol", async () => {
-      const res = await request(app).get("/ticket/aapl");
+    test("should uppercase the ticker symbol", async () => {
+      const res = await request(app).get("/ticker/aapl");
 
       expect([200, 500]).toContain(res.status);
     });
 
     test("should handle multiple symbol requests", async () => {
-      const res1 = await request(app).get("/ticket/AAPL");
-      const res2 = await request(app).get("/ticket/MSFT");
+      const res1 = await request(app).get("/ticker/AAPL");
+      const res2 = await request(app).get("/ticker/MSFT");
 
       expect([200, 500]).toContain(res1.status);
       expect([200, 500]).toContain(res2.status);
     });
   });
 
-  describe("GET /ticket/:ticket/:type - Financial Statements", () => {
+  describe("GET /ticker/:ticker/:type - Financial Statements", () => {
     test("should return income statement", async () => {
-      const res = await request(app).get("/ticket/AAPL/income");
+      const res = await request(app).get("/ticker/AAPL/income");
 
       expect([200, 500]).toContain(res.status);
     });
 
     test("should return balance sheet", async () => {
-      const res = await request(app).get("/ticket/AAPL/balance");
+      const res = await request(app).get("/ticker/AAPL/balance");
 
       expect([200, 500]).toContain(res.status);
     });
 
     test("should return cashflow statement", async () => {
-      const res = await request(app).get("/ticket/AAPL/cashflow");
+      const res = await request(app).get("/ticker/AAPL/cashflow");
 
       expect([200, 500]).toContain(res.status);
     });
 
     test("should accept annual period parameter", async () => {
       const res = await request(app)
-        .get("/ticket/AAPL/income")
+        .get("/ticker/AAPL/income")
         .query({ period: "annual" });
 
       expect([200, 500]).toContain(res.status);
@@ -67,20 +67,20 @@ describe("Ticket Routes", () => {
 
     test("should accept quarterly period parameter", async () => {
       const res = await request(app)
-        .get("/ticket/AAPL/income")
+        .get("/ticker/AAPL/income")
         .query({ period: "quarterly" });
 
       expect([200, 500]).toContain(res.status);
     });
 
     test("should default to annual period", async () => {
-      const res = await request(app).get("/ticket/AAPL/income");
+      const res = await request(app).get("/ticker/AAPL/income");
 
       expect([200, 500]).toContain(res.status);
     });
 
     test("should reject invalid statement type", async () => {
-      const res = await request(app).get("/ticket/AAPL/invalid");
+      const res = await request(app).get("/ticker/AAPL/invalid");
 
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty("error");
@@ -89,7 +89,7 @@ describe("Ticket Routes", () => {
 
     test("should reject invalid period", async () => {
       const res = await request(app)
-        .get("/ticket/AAPL/income")
+        .get("/ticker/AAPL/income")
         .query({ period: "invalid" });
 
       expect(res.status).toBe(400);
@@ -98,69 +98,69 @@ describe("Ticket Routes", () => {
     });
 
     test("should handle case-insensitive types", async () => {
-      const res1 = await request(app).get("/ticket/AAPL/INCOME");
-      const res2 = await request(app).get("/ticket/AAPL/Income");
+      const res1 = await request(app).get("/ticker/AAPL/INCOME");
+      const res2 = await request(app).get("/ticker/AAPL/Income");
 
       expect([200, 500]).toContain(res1.status);
       expect([200, 500]).toContain(res2.status);
     });
 
-    test("should handle case-insensitive tickets", async () => {
-      const res1 = await request(app).get("/ticket/aapl/income");
-      const res2 = await request(app).get("/ticket/AaPl/balance");
+    test("should handle case-insensitive tickers", async () => {
+      const res1 = await request(app).get("/ticker/aapl/income");
+      const res2 = await request(app).get("/ticker/AaPl/balance");
 
       expect([200, 500]).toContain(res1.status);
       expect([200, 500]).toContain(res2.status);
     });
   });
 
-  describe("GET /ticket/:ticket/holdings - Holdings Data", () => {
+  describe("GET /ticker/:ticker/holdings - Holdings Data", () => {
     test("should return holdings for valid ETF", async () => {
-      const res = await request(app).get("/ticket/SPY/holdings");
+      const res = await request(app).get("/ticker/SPY/holdings");
 
       expect([200, 500]).toContain(res.status);
     });
 
-    test("should uppercase the ticket symbol", async () => {
-      const res = await request(app).get("/ticket/spy/holdings");
+    test("should uppercase the ticker symbol", async () => {
+      const res = await request(app).get("/ticker/spy/holdings");
 
       expect([200, 500]).toContain(res.status);
     });
 
     test("should handle multiple holdings requests", async () => {
-      const res1 = await request(app).get("/ticket/SPY/holdings");
-      const res2 = await request(app).get("/ticket/QQQ/holdings");
+      const res1 = await request(app).get("/ticker/SPY/holdings");
+      const res2 = await request(app).get("/ticker/QQQ/holdings");
 
       expect([200, 500]).toContain(res1.status);
       expect([200, 500]).toContain(res2.status);
     });
   });
 
-  describe("GET /ticket/:ticket/insights - Stock Insights", () => {
+  describe("GET /ticker/:ticker/insights - Stock Insights", () => {
     test("should return insights for valid symbol", async () => {
-      const res = await request(app).get("/ticket/AAPL/insights");
+      const res = await request(app).get("/ticker/AAPL/insights");
 
       expect([200, 500]).toContain(res.status);
     });
 
-    test("should uppercase the ticket symbol", async () => {
-      const res = await request(app).get("/ticket/aapl/insights");
+    test("should uppercase the ticker symbol", async () => {
+      const res = await request(app).get("/ticker/aapl/insights");
 
       expect([200, 500]).toContain(res.status);
     });
 
     test("should handle multiple insights requests", async () => {
-      const res1 = await request(app).get("/ticket/AAPL/insights");
-      const res2 = await request(app).get("/ticket/MSFT/insights");
+      const res1 = await request(app).get("/ticker/AAPL/insights");
+      const res2 = await request(app).get("/ticker/MSFT/insights");
 
       expect([200, 500]).toContain(res1.status);
       expect([200, 500]).toContain(res2.status);
     });
   });
 
-  describe("GET /ticket/:ticket/news - News Articles", () => {
+  describe("GET /ticker/:ticker/news - News Articles", () => {
     test("should return news for valid symbol", async () => {
-      const res = await request(app).get("/ticket/AAPL/news");
+      const res = await request(app).get("/ticker/AAPL/news");
 
       expect([200, 500]).toContain(res.status);
       if (res.status === 200) {
@@ -173,8 +173,8 @@ describe("Ticket Routes", () => {
       }
     });
 
-    test("should uppercase the ticket symbol", async () => {
-      const res = await request(app).get("/ticket/aapl/news");
+    test("should uppercase the ticker symbol", async () => {
+      const res = await request(app).get("/ticker/aapl/news");
 
       expect([200, 500]).toContain(res.status);
       if (res.status === 200) {
@@ -184,7 +184,7 @@ describe("Ticket Routes", () => {
 
     test("should accept count query parameter", async () => {
       const res = await request(app)
-        .get("/ticket/AAPL/news")
+        .get("/ticker/AAPL/news")
         .query({ count: 5 });
 
       expect([200, 500]).toContain(res.status);
@@ -195,7 +195,7 @@ describe("Ticket Routes", () => {
 
     test("should limit count to 50", async () => {
       const res = await request(app)
-        .get("/ticket/AAPL/news")
+        .get("/ticker/AAPL/news")
         .query({ count: 100 });
 
       expect([200, 500]).toContain(res.status);
@@ -206,7 +206,7 @@ describe("Ticket Routes", () => {
     });
 
     test("should default to 10 articles", async () => {
-      const res = await request(app).get("/ticket/AAPL/news");
+      const res = await request(app).get("/ticker/AAPL/news");
 
       expect([200, 500]).toContain(res.status);
       if (res.status === 200) {
@@ -215,7 +215,7 @@ describe("Ticket Routes", () => {
     });
 
     test("should return array of SearchNews", async () => {
-      const res = await request(app).get("/ticket/AAPL/news");
+      const res = await request(app).get("/ticker/AAPL/news");
 
       expect([200, 500]).toContain(res.status);
       if (res.status === 200) {
@@ -233,8 +233,8 @@ describe("Ticket Routes", () => {
     });
 
     test("should handle multiple news requests", async () => {
-      const res1 = await request(app).get("/ticket/AAPL/news");
-      const res2 = await request(app).get("/ticket/MSFT/news");
+      const res1 = await request(app).get("/ticker/AAPL/news");
+      const res2 = await request(app).get("/ticker/MSFT/news");
 
       expect([200, 500]).toContain(res1.status);
       expect([200, 500]).toContain(res2.status);
@@ -247,9 +247,9 @@ describe("Ticket Routes", () => {
     });
   });
 
-  describe("GET /ticket/:ticket/events - Calendar Events", () => {
+  describe("GET /ticker/:ticker/events - Calendar Events", () => {
     test("should return events for valid symbol", async () => {
-      const res = await request(app).get("/ticket/AAPL/events");
+      const res = await request(app).get("/ticker/AAPL/events");
 
       expect([200, 500]).toContain(res.status);
       if (res.status === 200) {
@@ -259,8 +259,8 @@ describe("Ticket Routes", () => {
       }
     });
 
-    test("should uppercase the ticket symbol", async () => {
-      const res = await request(app).get("/ticket/aapl/events");
+    test("should uppercase the ticker symbol", async () => {
+      const res = await request(app).get("/ticker/aapl/events");
 
       expect([200, 500]).toContain(res.status);
       if (res.status === 200) {
@@ -269,17 +269,17 @@ describe("Ticket Routes", () => {
     });
 
     test("should handle multiple events requests", async () => {
-      const res1 = await request(app).get("/ticket/AAPL/events");
-      const res2 = await request(app).get("/ticket/MSFT/events");
+      const res1 = await request(app).get("/ticker/AAPL/events");
+      const res2 = await request(app).get("/ticker/MSFT/events");
 
       expect([200, 500]).toContain(res1.status);
       expect([200, 500]).toContain(res2.status);
     });
   });
 
-  describe("GET /ticket/:ticket/statistics - Key Statistics", () => {
+  describe("GET /ticker/:ticker/statistics - Key Statistics", () => {
     test("should return statistics for valid symbol", async () => {
-      const res = await request(app).get("/ticket/AAPL/statistics");
+      const res = await request(app).get("/ticker/AAPL/statistics");
 
       expect([200, 500]).toContain(res.status);
       if (res.status === 200) {
@@ -288,8 +288,8 @@ describe("Ticket Routes", () => {
       }
     });
 
-    test("should uppercase the ticket symbol", async () => {
-      const res = await request(app).get("/ticket/aapl/statistics");
+    test("should uppercase the ticker symbol", async () => {
+      const res = await request(app).get("/ticker/aapl/statistics");
 
       expect([200, 500]).toContain(res.status);
       if (res.status === 200) {
@@ -298,17 +298,17 @@ describe("Ticket Routes", () => {
     });
 
     test("should handle multiple statistics requests", async () => {
-      const res1 = await request(app).get("/ticket/AAPL/statistics");
-      const res2 = await request(app).get("/ticket/MSFT/statistics");
+      const res1 = await request(app).get("/ticker/AAPL/statistics");
+      const res2 = await request(app).get("/ticker/MSFT/statistics");
 
       expect([200, 500]).toContain(res1.status);
       expect([200, 500]).toContain(res2.status);
     });
   });
 
-  describe("GET /ticket/:ticket/recommendations - Stock Recommendations", () => {
+  describe("GET /ticker/:ticker/recommendations - Stock Recommendations", () => {
     test("should return recommendations for valid symbol", async () => {
-      const res = await request(app).get("/ticket/AAPL/recommendations");
+      const res = await request(app).get("/ticker/AAPL/recommendations");
 
       expect([200, 500]).toContain(res.status);
       if (res.status === 200) {
@@ -318,8 +318,8 @@ describe("Ticket Routes", () => {
       }
     });
 
-    test("should uppercase the ticket symbol", async () => {
-      const res = await request(app).get("/ticket/aapl/recommendations");
+    test("should uppercase the ticker symbol", async () => {
+      const res = await request(app).get("/ticker/aapl/recommendations");
 
       expect([200, 500]).toContain(res.status);
       if (res.status === 200) {
@@ -329,8 +329,8 @@ describe("Ticket Routes", () => {
     });
 
     test("should handle multiple recommendations requests", async () => {
-      const res1 = await request(app).get("/ticket/AAPL/recommendations");
-      const res2 = await request(app).get("/ticket/MSFT/recommendations");
+      const res1 = await request(app).get("/ticker/AAPL/recommendations");
+      const res2 = await request(app).get("/ticker/MSFT/recommendations");
 
       expect([200, 500]).toContain(res1.status);
       expect([200, 500]).toContain(res2.status);
@@ -344,7 +344,7 @@ describe("Ticket Routes", () => {
 
     test("should return 404 for invalid symbol", async () => {
       const res = await request(app).get(
-        "/ticket/INVALID_SYMBOL_XYZ123/recommendations"
+        "/ticker/INVALID_SYMBOL_XYZ123/recommendations"
       );
 
       expect(res.status).toBe(404);
@@ -354,20 +354,20 @@ describe("Ticket Routes", () => {
   });
 
   describe("Route Collision Prevention", () => {
-    test("should not match /ticket/:ticket to /ticket/:ticket/:type", async () => {
-      const res1 = await request(app).get("/ticket/AAPL");
-      const res2 = await request(app).get("/ticket/AAPL/income");
+    test("should not match /ticker/:ticker to /ticker/:ticker/:type", async () => {
+      const res1 = await request(app).get("/ticker/AAPL");
+      const res2 = await request(app).get("/ticker/AAPL/income");
 
       expect([200, 500]).toContain(res1.status);
       expect([200, 400, 500]).toContain(res2.status); // 400 for invalid type if parsed differently
     });
 
     test("should correctly differentiate between endpoints", async () => {
-      const infoRes = await request(app).get("/ticket/AAPL");
-      const financialRes = await request(app).get("/ticket/AAPL/income");
-      const holdingsRes = await request(app).get("/ticket/AAPL/holdings");
-      const insightsRes = await request(app).get("/ticket/AAPL/insights");
-      const newsRes = await request(app).get("/ticket/AAPL/news");
+      const infoRes = await request(app).get("/ticker/AAPL");
+      const financialRes = await request(app).get("/ticker/AAPL/income");
+      const holdingsRes = await request(app).get("/ticker/AAPL/holdings");
+      const insightsRes = await request(app).get("/ticker/AAPL/insights");
+      const newsRes = await request(app).get("/ticker/AAPL/news");
 
       expect([200, 500]).toContain(infoRes.status);
       expect([200, 500]).toContain(financialRes.status);
@@ -379,7 +379,7 @@ describe("Ticket Routes", () => {
 
   describe("Error Handling", () => {
     test("should return 400 for invalid financial type", async () => {
-      const res = await request(app).get("/ticket/AAPL/invalid");
+      const res = await request(app).get("/ticker/AAPL/invalid");
 
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty("error");
@@ -387,7 +387,7 @@ describe("Ticket Routes", () => {
 
     test("should return 400 for invalid period", async () => {
       const res = await request(app)
-        .get("/ticket/AAPL/income")
+        .get("/ticker/AAPL/income")
         .query({ period: "weekly" });
 
       expect(res.status).toBe(400);
@@ -395,7 +395,7 @@ describe("Ticket Routes", () => {
     });
 
     test("should return 404 for invalid symbol in company info endpoint", async () => {
-      const res = await request(app).get("/ticket/INVALID_SYMBOL_XYZ123");
+      const res = await request(app).get("/ticker/INVALID_SYMBOL_XYZ123");
 
       expect(res.status).toBe(404);
       expect(res.body).toHaveProperty("error");
@@ -404,7 +404,7 @@ describe("Ticket Routes", () => {
 
     test("should return 404 for invalid symbol in holdings endpoint", async () => {
       const res = await request(app).get(
-        "/ticket/INVALID_SYMBOL_XYZ123/holdings"
+        "/ticker/INVALID_SYMBOL_XYZ123/holdings"
       );
 
       expect(res.status).toBe(404);
@@ -414,7 +414,7 @@ describe("Ticket Routes", () => {
 
     test("should return 404 for invalid symbol in insights endpoint", async () => {
       const res = await request(app).get(
-        "/ticket/INVALID_SYMBOL_XYZ123/insights"
+        "/ticker/INVALID_SYMBOL_XYZ123/insights"
       );
 
       expect(res.status).toBe(404);
@@ -423,7 +423,7 @@ describe("Ticket Routes", () => {
     });
 
     test("should return 404 for invalid symbol in news endpoint", async () => {
-      const res = await request(app).get("/ticket/INVALID_SYMBOL_XYZ123/news");
+      const res = await request(app).get("/ticker/INVALID_SYMBOL_XYZ123/news");
 
       expect(res.status).toBe(404);
       expect(res.body).toHaveProperty("error");
@@ -432,7 +432,7 @@ describe("Ticket Routes", () => {
 
     test("should return 404 for invalid symbol in financial endpoint", async () => {
       const res = await request(app).get(
-        "/ticket/INVALID_SYMBOL_XYZ123/income"
+        "/ticker/INVALID_SYMBOL_XYZ123/income"
       );
 
       expect(res.status).toBe(404);
@@ -443,7 +443,7 @@ describe("Ticket Routes", () => {
     test("should return 500 for server errors", async () => {
       // Mock a scenario that would cause a server error
       // This is harder to test directly, but we can verify the pattern exists
-      const res = await request(app).get("/ticket/AAPL");
+      const res = await request(app).get("/ticker/AAPL");
 
       // Should either succeed (200) or fail with server error (500), not client error (404)
       expect([200, 500]).toContain(res.status);
@@ -454,7 +454,7 @@ describe("Ticket Routes", () => {
 
     test("should handle server errors gracefully", async () => {
       // This will likely fail if the API is down, but should return 500
-      const res = await request(app).get("/ticket/INVALID_SYMBOL_XYZ123");
+      const res = await request(app).get("/ticker/INVALID_SYMBOL_XYZ123");
 
       // Could be 404 (invalid symbol) or 500 (server error)
       expect([404, 500]).toContain(res.status);

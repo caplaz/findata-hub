@@ -1,11 +1,11 @@
 /**
- * Ticket Helper Functions Tests
- * Unit tests for internal helper functions in ticket routes
- * @module tests/routes/ticket-helpers.test
+ * Ticker Helper Functions Tests
+ * Unit tests for internal helper functions in ticker routes
+ * @module tests/routes/ticker-helpers.test
  */
 
 import { Response } from "express";
-import { handleTicketError } from "../../src/routes/ticket";
+import { handleTickerError } from "../../src/routes/ticker";
 
 // Mock the logger to capture log calls
 const mockLogs: any[] = [];
@@ -15,7 +15,7 @@ jest.mock("../../src/utils/logger", () => ({
   },
 }));
 
-describe("Ticket Helper Functions", () => {
+describe("Ticker Helper Functions", () => {
   let mockResponse: Partial<Response>;
 
   beforeEach(() => {
@@ -26,11 +26,11 @@ describe("Ticket Helper Functions", () => {
     };
   });
 
-  describe("handleTicketError", () => {
+  describe("handleTickerError", () => {
     test("should return 404 for invalid symbol errors", () => {
       const error = new Error("Quote not found for symbol: INVALID");
 
-      handleTicketError(mockResponse as Response, "INVALID", "test", error);
+      handleTickerError(mockResponse as Response, "INVALID", "test", error);
 
       expect(mockResponse.status).toHaveBeenCalledWith(404);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -39,7 +39,7 @@ describe("Ticket Helper Functions", () => {
       expect(mockLogs.length).toBe(1);
       expect(mockLogs[0]).toEqual([
         "error",
-        "Ticket test endpoint error for INVALID: Quote not found for symbol: INVALID",
+        "Ticker test endpoint error for INVALID: Quote not found for symbol: INVALID",
         error,
       ]);
     });
@@ -47,7 +47,7 @@ describe("Ticket Helper Functions", () => {
     test("should return 404 for fundamentals not found errors", () => {
       const error = new Error("No fundamentals data found for symbol: INVALID");
 
-      handleTicketError(mockResponse as Response, "INVALID", "info", error);
+      handleTickerError(mockResponse as Response, "INVALID", "info", error);
 
       expect(mockResponse.status).toHaveBeenCalledWith(404);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -58,7 +58,7 @@ describe("Ticket Helper Functions", () => {
     test("should return 404 for additional error patterns", () => {
       const error = new Error("Missing required query parameter");
 
-      handleTicketError(mockResponse as Response, "TEST", "news", error, [
+      handleTickerError(mockResponse as Response, "TEST", "news", error, [
         "Missing required query parameter",
       ]);
 
@@ -71,7 +71,7 @@ describe("Ticket Helper Functions", () => {
     test("should return 500 for other server errors", () => {
       const error = new Error("Network timeout");
 
-      handleTicketError(mockResponse as Response, "AAPL", "info", error);
+      handleTickerError(mockResponse as Response, "AAPL", "info", error);
 
       expect(mockResponse.status).toHaveBeenCalledWith(500);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -82,7 +82,7 @@ describe("Ticket Helper Functions", () => {
     test("should handle non-Error objects", () => {
       const error = "String error";
 
-      handleTicketError(mockResponse as Response, "TEST", "endpoint", error);
+      handleTickerError(mockResponse as Response, "TEST", "endpoint", error);
 
       expect(mockResponse.status).toHaveBeenCalledWith(500);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -93,11 +93,11 @@ describe("Ticket Helper Functions", () => {
     test("should log with correct format", () => {
       const error = new Error("Test error");
 
-      handleTicketError(mockResponse as Response, "SYMBOL", "custom", error);
+      handleTickerError(mockResponse as Response, "SYMBOL", "custom", error);
 
       expect(mockLogs[0]).toEqual([
         "error",
-        "Ticket custom endpoint error for SYMBOL: Test error",
+        "Ticker custom endpoint error for SYMBOL: Test error",
         error,
       ]);
     });
@@ -105,7 +105,7 @@ describe("Ticket Helper Functions", () => {
     test("should combine default and additional error patterns", () => {
       const error = new Error("Custom error pattern");
 
-      handleTicketError(mockResponse as Response, "TEST", "endpoint", error, [
+      handleTickerError(mockResponse as Response, "TEST", "endpoint", error, [
         "Custom error pattern",
       ]);
 

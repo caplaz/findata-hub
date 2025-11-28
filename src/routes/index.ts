@@ -12,7 +12,7 @@ import marketRoutes from "./market";
 import newsReaderRouter from "./newsReader";
 import quotesRoutes from "./quotes";
 import searchRoutes from "./search";
-import ticketRoutes from "./ticket";
+import tickerRoutes from "./ticker";
 
 const router = Router();
 
@@ -47,10 +47,10 @@ router.use("/history", historyRoutes);
 router.use("/search", searchRoutes);
 
 /**
- * Ticket (consolidated ticker-specific) routes
+ * Ticker (consolidated ticker-specific) routes
  * Includes: company info, financials, holdings, insights, events, statistics, recommendations, and news
  */
-router.use("/ticket", ticketRoutes);
+router.use("/ticker", tickerRoutes);
 
 /**
  * News reader routes (additional news functionality)

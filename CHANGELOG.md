@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.2] - 2025-11-28
+
+### Changed
+
+- **API Terminology Standardization**: Complete refactoring from "ticket" to "ticker" terminology throughout codebase
+
+  - **File Renames**: Renamed `src/routes/ticket.ts` → `src/routes/ticker.ts` and corresponding test files
+  - **Route Updates**: All API endpoints changed from `/ticket/` to `/ticker/` paths
+  - **Function Names**: Updated all function names from `getTicketInfo()` to `getTickerInfo()`, etc.
+  - **Variable Names**: Consistent "ticker" terminology across all variables and parameters
+  - **Documentation**: Updated README and all code comments to use proper "ticker" terminology
+  - **Test Suite**: Updated all test files with new function names and endpoint paths
+
+### Technical Details
+
+- **API Endpoints**: All ticker-related endpoints now use proper `/ticker/` prefix
+- **Breaking Change**: API endpoints changed from `/ticket/` to `/ticker/` - existing clients must update
+- **Test Coverage**: All 166 tests pass including updated ticker endpoint tests
+- **Code Quality**: No linting errors, full TypeScript compilation successful
+- **Terminology**: Consistent use of "ticker" (correct financial term) instead of "ticket"
+
+### Migration Notes
+
+- **For API Consumers**: Update all `/ticket/` endpoint calls to use `/ticker/` paths
+- **For Developers**: Code now uses consistent "ticker" terminology throughout
+
 ## [3.0.1] - 2025-11-27
 
 ### Added
@@ -164,7 +190,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Code Architecture**: Major refactoring for better maintainability and type safety
 
   - **News Endpoints**: Simplified to return `SearchNews[]` arrays with improved type safety
-  - **Ticker Routes**: Consolidated under `/ticket` endpoint hierarchy for better organization
+  - **Ticker Routes**: Consolidated under `/ticker` endpoint hierarchy for better organization
   - **MCP Server**: Modularized into separate components with improved testability
   - **Error Responses**: Standardized error response types across all route files
   - **Cache System**: Enhanced with better memcached support and type safety

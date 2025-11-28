@@ -166,15 +166,15 @@ if (require.main === module) {
     );
     log("info", `   GET /news - General market news`);
     log("info", `   GET /news-reader - Additional news functionality`);
-    log("info", `   GET /ticket/:ticket - Company information`);
+    log("info", `   GET /ticker/:ticker - Company information`);
     log(
       "info",
-      `   GET /ticket/:ticket/insights - Comprehensive stock insights`
+      `   GET /ticker/:ticker/insights - Comprehensive stock insights`
     );
-    log("info", `   GET /ticket/:ticket/news - Company-specific news`);
+    log("info", `   GET /ticker/:ticker/news - Company-specific news`);
     log(
       "info",
-      `   GET /ticket/:ticket/:type - Financial statements (income/balance/cashflow)`
+      `   GET /ticker/:ticker/:type - Financial statements (income/balance/cashflow)`
     );
     log("info", `\n🤖 MCP (Model Context Protocol) Endpoints:`);
     log(

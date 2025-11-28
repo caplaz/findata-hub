@@ -114,7 +114,7 @@ describe("/info/:symbols", () => {
   });
 
   it("should return info data for single symbol", async () => {
-    const res = await request(app).get("/ticket/AAPL");
+    const res = await request(app).get("/ticker/AAPL");
     expect([200, 500]).toContain(res.status);
     if (res.status === 200) {
       expect(typeof res.body).toBe("object");
@@ -124,7 +124,7 @@ describe("/info/:symbols", () => {
   });
 
   it("should handle errors gracefully", async () => {
-    const res = await request(app).get("/ticket/INVALID");
+    const res = await request(app).get("/ticker/INVALID");
     expect([200, 500]).toContain(res.status);
     if (res.status === 500) {
       expect(typeof res.body).toBe("object");
