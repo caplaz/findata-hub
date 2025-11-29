@@ -19,9 +19,11 @@ app.use((err: any, req: any, res: any, next: any) => {
 });
 
 describe("Search Routes", () => {
-  describe("GET /search/:query", () => {
+  describe("POST /search", () => {
     test("should return search results", async () => {
-      const response = await request(app).get("/search/apple");
+      const response = await request(app)
+        .post("/search")
+        .send({ query: "apple" });
       expect([200, 500]).toContain(response.status);
       if (response.status === 200) {
         expect(response.body).toBeDefined();
@@ -29,8 +31,32 @@ describe("Search Routes", () => {
     });
 
     test("should handle special characters in query", async () => {
-      const response = await request(app).get("/search/apple%20inc");
+      const response = await request(app)
+        .post("/search")
+        .send({ query: "apple inc" });
       expect([200, 500]).toContain(response.status);
+    });
+
+    test("should return 400 for missing query", async () => {
+      const response = await request(app).post("/search").send({});
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain("required");
+    });
+
+    test("should return 400 for empty query", async () => {
+      const response = await request(app)
+        .post("/search")
+        .send({ query: "" });
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain("non-empty");
+    });
+
+    test("should return 400 for invalid query type", async () => {
+      const response = await request(app)
+        .post("/search")
+        .send({ query: 123 });
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain("string");
     });
   });
 });
