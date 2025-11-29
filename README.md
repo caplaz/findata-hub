@@ -1,4 +1,4 @@
-# Yahoo Finance Server
+# Findata Hub - Financial Data API Server
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/acerbetti/yahoo-finance-server/blob/main/LICENSE)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen.svg)](https://nodejs.org/)
@@ -7,19 +7,20 @@
 [![GitHub Issues](https://img.shields.io/github/issues/acerbetti/yahoo-finance-server.svg)](https://github.com/acerbetti/yahoo-finance-server/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/acerbetti/yahoo-finance-server.svg)](https://github.com/acerbetti/yahoo-finance-server/stargazers)
 
-A comprehensive Node.js Express API server that serves Yahoo Finance data using the yahoo-finance2 v3.10.2 library. Features 24 REST endpoints for financial data, 5 MCP (Model Context Protocol) tools for LLM integration, and supports multiple tickers in a single request with arrays as results and partial failure handling.
+A comprehensive Node.js Express API server that serves financial data from Yahoo Finance and CoinStats. Features 26 REST endpoints for stocks, cryptocurrencies, market data, and more. Includes 5 MCP (Model Context Protocol) tools for LLM integration, supports multiple tickers in a single request with arrays as results and partial failure handling.
 
 ## ⚠️ Disclaimer
 
-This is an **unofficial implementation** and has **no affiliation with Yahoo Inc.** or any of its subsidiaries. This project is not endorsed by, sponsored by, or otherwise connected to Yahoo. All data is sourced from public Yahoo Finance APIs through the yahoo-finance2 library.
+This is an **unofficial implementation** and has **no affiliation with Yahoo Inc.**, **CoinStats**, or any of their subsidiaries. This project is not endorsed by, sponsored by, or otherwise connected to Yahoo or CoinStats. All data is sourced from public APIs through the yahoo-finance2 and CoinStats libraries.
 
 ## 🙏 Credits
 
-Special thanks to the authors and maintainers of the [yahoo-finance2](https://github.com/gadicc/yahoo-finance2) library for providing the Yahoo Finance API wrapper.
+Special thanks to the authors and maintainers of the [yahoo-finance2](https://github.com/gadicc/yahoo-finance2) library for providing the Yahoo Finance API wrapper, and to [CoinStats](https://coinstats.app/) for their comprehensive cryptocurrency API.
 
 ## Features
 
-- **24 REST API Endpoints** for stock quotes, history, company info, search, market data, recommendations, insights, screeners, performance analysis, financial statements, news, holdings, events, statistics, and article content extraction
+- **26 REST API Endpoints** for stock quotes, cryptocurrencies, history, company info, search, market data, recommendations, insights, screeners, performance analysis, financial statements, news, holdings, events, statistics, and article content extraction
+- **Cryptocurrency Support** - Real-time crypto data from CoinStats API with full filtering, sorting, and pagination
 - **5 MCP Tools** (Model Context Protocol) for LLM integration using official `@modelcontextprotocol/sdk` - see [MCP.md](./MCP.md) for detailed documentation
 - **OpenAPI Client Compatibility** - Full support for OpenAI function calling format via `?format=openai`
 - **CORS Support** - Cross-origin resource sharing enabled for web applications
@@ -29,7 +30,7 @@ Special thanks to the authors and maintainers of the [yahoo-finance2](https://gi
 - Comprehensive API logging with configurable levels (`error`, `warn`, `info`, `debug`)
 - Docker multi-stage build with multi-architecture support (AMD64, ARM64, ARMv7)
 - Health checks and proper error handling
-- Jest tests with comprehensive coverage (168 tests across 19 test suites)
+- Jest tests with comprehensive coverage (173 tests across 20 test suites)
 - **Interactive API Documentation** at `/api-docs` (Swagger UI)
 - **OpenAPI JSON Specification** at `/api-docs.json`
 - **Modular architecture** with separated concerns
@@ -60,6 +61,11 @@ The server will be available at `http://localhost:3000` with API docs at `http:/
 - `GET /history/:symbols` - Historical price data (multi-ticker support)
 - `GET /search/:query` - Symbol and news search
 - `GET /news-reader/*` - Article content extraction
+
+### Cryptocurrency Endpoints
+
+- `GET /crypto/coins` - Cryptocurrency list with full filtering, sorting, and pagination
+- `GET /crypto/coins/:coinId` - Specific cryptocurrency data
 
 ### Ticker Endpoints
 
@@ -138,7 +144,7 @@ This compiles TypeScript source files to JavaScript in the `dist/` directory usi
 npm test
 ```
 
-This runs the Jest test suite covering 164 test cases across 19 test files.
+This runs the Jest test suite covering 173 test cases across 20 test files.
 
 ### Environment Variables
 
@@ -154,6 +160,7 @@ Configure the server using environment variables:
 | `RATE_LIMIT_WINDOW_MS` | 900000                | Rate limit window in ms (15 minutes)      |
 | `RATE_LIMIT_MAX`       | 100                   | Max requests per window per IP            |
 | `SWAGGER_SERVER_URL`   | http://localhost:3000 | Base URL for Swagger API documentation    |
+| `COINSTATS_API_KEY`    | demo-api-key          | CoinStats API key for cryptocurrency data |
 
 **Examples:**
 
@@ -181,6 +188,42 @@ SWAGGER_SERVER_URL=http://host.docker.internal:3000 npm start
 
 # Run in Docker container (Linux)
 SWAGGER_SERVER_URL=http://172.17.0.1:3000 npm start
+
+# Run with CoinStats API key
+COINSTATS_API_KEY=your-api-key-here npm start
+```
+
+## Cryptocurrency API Setup
+
+To use the cryptocurrency endpoints, you'll need a CoinStats API key:
+
+1. Visit [CoinStats API](https://coinstats.app/api-docs) and sign up for an account
+2. Get your API key from the dashboard
+3. Set the `COINSTATS_API_KEY` environment variable or add it to your `.env` file
+
+**Example `.env` file:**
+
+```bash
+COINSTATS_API_KEY=your-api-key-here
+```
+
+**Cryptocurrency API Examples:**
+
+```bash
+# Get top 10 cryptocurrencies by market cap
+curl "http://localhost:3000/crypto/coins?limit=10&sortBy=marketCap&sortDir=desc"
+
+# Get Bitcoin data
+curl "http://localhost:3000/crypto/coins/bitcoin"
+
+# Search for Ethereum with EUR pricing
+curl "http://localhost:3000/crypto/coins/ethereum?currency=EUR"
+
+# Get cryptocurrencies sorted by 24h price change (gainers)
+curl "http://localhost:3000/crypto/coins?sortBy=priceChange1d&sortDir=desc&limit=10"
+
+# Filter by specific coins
+curl "http://localhost:3000/crypto/coins?coinIds=bitcoin,ethereum,solana"
 ```
 
 ## CORS (Cross-Origin Resource Sharing)

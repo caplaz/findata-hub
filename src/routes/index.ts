@@ -6,6 +6,7 @@
 
 import { Router } from "express";
 
+import cryptoRoutes from "./crypto";
 import healthRoutes from "./health";
 import historyRoutes from "./history";
 import marketRoutes from "./market";
@@ -24,6 +25,12 @@ const router = Router();
  * Health check routes
  */
 router.use("/", healthRoutes);
+
+/**
+ * Cryptocurrency routes (powered by CoinStats)
+ * Includes: coins list, top coins, gainers, losers
+ */
+router.use("/crypto", cryptoRoutes);
 
 /**
  * Market data routes (generic market information)

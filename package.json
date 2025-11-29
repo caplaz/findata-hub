@@ -1,7 +1,7 @@
 {
-  "name": "yahoo-finance-server",
-  "version": "3.0.2",
-  "description": "Express API server for Yahoo Finance data",
+  "name": "findata-hub",
+  "version": "1.0.0",
+  "description": "Express API server for Yahoo Finance and cryptocurrency data",
   "main": "dist/src/server.js",
   "scripts": {
     "build": "tsc",

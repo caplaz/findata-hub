@@ -5,617 +5,102 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.2] - 2025-11-28
-
-### Changed
-
-- **API Terminology Standardization**: Complete refactoring from "ticket" to "ticker" terminology throughout codebase
-
-  - **File Renames**: Renamed `src/routes/ticket.ts` → `src/routes/ticker.ts` and corresponding test files
-  - **Route Updates**: All API endpoints changed from `/ticket/` to `/ticker/` paths
-  - **Function Names**: Updated all function names from `getTicketInfo()` to `getTickerInfo()`, etc.
-  - **Variable Names**: Consistent "ticker" terminology across all variables and parameters
-  - **Documentation**: Updated README and all code comments to use proper "ticker" terminology
-  - **Test Suite**: Updated all test files with new function names and endpoint paths
-
-### Technical Details
-
-- **API Endpoints**: All ticker-related endpoints now use proper `/ticker/` prefix
-- **Breaking Change**: API endpoints changed from `/ticket/` to `/ticker/` - existing clients must update
-- **Test Coverage**: All 166 tests pass including updated ticker endpoint tests
-- **Code Quality**: No linting errors, full TypeScript compilation successful
-- **Terminology**: Consistent use of "ticker" (correct financial term) instead of "ticket"
-
-### Migration Notes
-
-- **For API Consumers**: Update all `/ticket/` endpoint calls to use `/ticker/` paths
-- **For Developers**: Code now uses consistent "ticker" terminology throughout
-
-## [3.0.1] - 2025-11-27
+## [1.0.0] - 2025-11-29
 
 ### Added
 
-- **Fear & Greed Index Integration**: Enhanced `/market/sentiment` endpoint with real-time market sentiment data
+- **Initial Release**: Complete financial data hub with comprehensive stock and cryptocurrency APIs
 
-  - **Alternative.me API Integration**: Fetches Fear & Greed Index data from Alternative.me API
-  - **Comprehensive Sentiment Data**: Returns VIX volatility index alongside Fear & Greed Index
-  - **Graceful Error Handling**: Continues to function even if external API is unavailable
-  - **Type-Safe Implementation**: Added `FearGreedIndex` and `MarketSentiment` TypeScript interfaces
-  - **Updated Swagger Documentation**: Complete OpenAPI schemas for new sentiment data structures
+- **Cryptocurrency API Integration**: Full CoinStats API support for real-time cryptocurrency data
 
-### Improved
+  - `GET /crypto/coins` - Retrieve cryptocurrency listings with advanced filtering and sorting
+    - Support for limit, offset, currency, orderBy, and orderDirection parameters
+    - Real-time price data, market cap, volume, and price changes
+    - Multiple currency support (USD, EUR, BTC, ETH)
+    - Sorting by market cap, price, volume, and price changes
+  - `GET /crypto/coins/:coinId` - Detailed information for specific cryptocurrencies
+    - Comprehensive coin data including price history, market metrics, and metadata
+    - Support for multiple currencies and detailed market statistics
 
-- **Code Quality**: Enhanced import organization and linting compliance
-  - **Import Consolidation**: Moved all imports to top of files following ESLint rules
-  - **Modern Node.js**: Replaced `node-fetch` dependency with native Node.js 18+ `fetch` API
-  - **TypeScript Declarations**: Added proper type declarations for global fetch function
+- **Stock Market API Integration**: Complete Yahoo Finance API coverage
 
-### Technical Details
+  - `GET /quote/:symbols` - Real-time stock quotes for multiple symbols
+  - `GET /history/:symbols` - Historical price data with configurable periods and intervals
+  - `GET /info/:symbols` - Company profiles, fundamentals, and market data
+  - `GET /financial/:symbol/:type` - Financial statements (income, balance sheet, cash flow)
+  - `GET /news/:symbol` - Company news and market context
+  - `GET /search/:query` - Symbol and news search functionality
+  - `GET /trending/:region` - Trending symbols by geographic region
+  - `GET /recommendations/:symbol` - Similar stock recommendations
+  - `GET /insights/:symbol` - Comprehensive stock analysis and insights
+  - `GET /screener/:type` - Stock screening (gainers, losers, most active, most shorted)
+  - `GET /market/sentiment` - Market sentiment with Fear & Greed Index
+  - `GET /news_reader/*` - Full article content extraction from Yahoo Finance URLs
 
-- **New Dependencies**: None added (removed `node-fetch` dependency)
-- **API Compatibility**: Fully backward compatible - existing sentiment endpoint responses enhanced
-- **Test Coverage**: Added 4 comprehensive tests for Fear & Greed Index functionality
-- **Performance**: Minimal impact with external API fallback and caching support
-- **Error Resilience**: Sentiment endpoint continues working even if Fear & Greed API fails
+- **Model Context Protocol (MCP) Integration**: Official MCP SDK implementation for LLM integration
 
-### Migration Notes
+  - 5 comprehensive financial tools for AI assistants
+  - Full MCP 2024-11-05 protocol compliance
+  - Tools for quotes, history, news, financial statements, and cryptocurrency data
+  - SSE streaming support for real-time data delivery
 
-- **For API Consumers**: No breaking changes - sentiment endpoint now returns additional Fear & Greed Index data
-- **For Developers**: Code now uses native Node.js `fetch` instead of `node-fetch` package
+- **Advanced Caching System**: Multi-tier caching for optimal performance
 
-## [3.0.0] - 2025-11-27
+  - Configurable TTL settings (short: 10s for real-time data, standard: 5min)
+  - Per-symbol caching strategy to maximize hit rates
+  - Support for NodeCache, Memcached, and Redis backends
+  - Intelligent cache key management and invalidation
 
-### Changed
+- **Production-Ready Infrastructure**:
 
-- **Complete MCP SDK Migration**: Major architectural overhaul replacing custom MCP implementation with official `@modelcontextprotocol/sdk`
-  - **Tool Consolidation**: Reduced from 14 individual tools to 5 aggregated, comprehensive financial tools
-  - **Official SDK Integration**: Migrated to `StreamableHTTPServerTransport` for stateless HTTP request handling
-  - **Breaking Change**: Removed REST-style MCP endpoints (`/mcp/health`, `/mcp/tools`) for pure MCP protocol compliance
-  - **Protocol Compliance**: All MCP communication now uses official JSON-RPC protocol via single `POST /mcp` endpoint
+  - Express.js server with TypeScript for type safety
+  - Comprehensive error handling and validation
+  - Rate limiting and CORS support for web applications
+  - Docker containerization with multi-stage builds
+  - Health checks and graceful shutdown
+  - Environment-based configuration management
 
-### Added
+- **Developer Experience**:
 
-- **Official MCP Dependencies**: Added `@modelcontextprotocol/sdk` v1.23.0 and `zod` v4.1.13 for schema validation
-- **Enhanced MCP Server Logging**: Comprehensive logging throughout MCP server lifecycle including initialization, tool execution, and error handling
-- **Pure MCP Protocol Support**: Full compliance with MCP 2024-11-05 specification supporting `initialize`, `tools/list`, `tools/call`, and `ping` methods
+  - Complete OpenAPI/Swagger documentation for all endpoints
+  - Comprehensive Jest test suite (173 tests across 20 test suites)
+  - ESLint configuration with strict TypeScript rules
+  - Hot-reload development server with tsx
+  - Example client scripts for OpenAI integration
+  - Detailed README with setup, API usage, and deployment guides
 
-### Removed
-
-- **Legacy MCP Endpoints**: Eliminated REST-style convenience endpoints (`GET /mcp/health`, `GET /mcp/tools`) redundant with MCP protocol methods
-- **Custom MCP Implementation**: Removed custom MCP server, transport, and tool registration logic
-
-### Improved
-
-- **MCP Tool Architecture**: Enhanced with official SDK patterns, Zod schema validation, and standardized error handling
-- **Documentation Updates**: Comprehensive refresh including MCP.md rewrite, README updates, and protocol examples
-
-### Technical Details
-
-- **Dependencies**: Added `@modelcontextprotocol/sdk` (^1.23.0) and `zod` (^4.1.13)
-- **Breaking Changes**: MCP clients must use official MCP protocol instead of REST endpoints
-- **Test Suite**: Reduced from 168 to 164 tests (removed health endpoint tests)
-- **Backward Compatibility**: REST API endpoints unchanged, only MCP interface affected
-- **Performance**: Maintained existing caching and performance optimizations
-
-### Migration Guide
-
-**For MCP Clients:**
-
-- Replace `GET /mcp/health` with `POST /mcp` using `{"method": "initialize"}`
-- Replace `GET /mcp/tools` with `POST /mcp` using `{"method": "tools/list"}`
-- Replace custom tool calling with `POST /mcp` using `{"method": "tools/call", "params": {...}}`
-- Use official MCP client libraries for seamless integration
-
-**For REST API Users:** No changes required - all REST endpoints remain unchanged
-
-## [2.0.2] - 2025-11-26
-
-### Fixed
-
-- **News Endpoint Functionality**: Fixed `/news` endpoint returning empty results
-
-  - **Root Cause**: yahoo-finance2 `search()` method requires non-empty query parameter
-  - **Solution**: Changed search query from empty string `""` to `"market"` to retrieve general market news
-  - **Error Resolution**: Eliminated "Missing required query parameter=q" errors
-  - **Functionality**: News endpoint now returns actual market news articles with titles, publishers, links, and metadata
+- **Security & Reliability**:
+  - Input validation and sanitization
+  - Rate limiting to prevent abuse
+  - Comprehensive logging with configurable levels
+  - Graceful error handling with partial failure support
+  - Environment variable management for sensitive configuration
 
 ### Technical Details
 
-- All tests pass (247/247) including news endpoint functionality
-- Backward compatible - no breaking changes to API contracts
-- Caching and rate limiting continue to work correctly for news endpoint
-
-## [2.0.1] - 2025-11-23
-
-### Added
-
-- **Advanced Caching System**: Comprehensive caching improvements for better performance and API efficiency
-
-  - **Short TTL for Real-time Data**: Added `CACHE_TTL_SHORT` (10 seconds) for quote data to balance freshness with performance
-  - **Per-symbol History Caching**: History endpoints now cache individual symbols instead of bulk requests, reducing cache misses
-  - **Enhanced Cache Logging**: Detailed logging with TTL information for cache hits/misses and debugging
-  - **Improved Cache Key Management**: Better cache key generation for individual symbols in history routes
-
-### Added
-
-- **Comprehensive Cache Testing**: New test suite for caching behavior validation
-
-  - **`tests/cache_behavior.test.ts`**: Tests MCP handler caching logic with mocked cache and yahoo-finance2
-  - **`tests/routes/quote_caching.test.ts`**: Route-specific tests for quote endpoint caching
-  - **`tests/routes/history_caching.test.ts`**: Tests for per-symbol history caching implementation
-  - **Mock Infrastructure**: Comprehensive mocking for cache interfaces and yahoo-finance2 API calls
-
-### Performance Improvements
-
-- **Reduced API Calls**: Better cache utilization through per-symbol caching strategy
-- **Faster Response Times**: Real-time data (quotes) cached for 10 seconds instead of 5 minutes
-- **Improved Cache Hit Rates**: Individual symbol caching prevents cache invalidation for unrelated symbols
-- **Enhanced Debugging**: Detailed cache operation logging with TTL information
-
-### Technical Details
-
-- All 247 tests passing across 24 test suites (added 6 new cache-related tests)
-- Backward compatible - no breaking changes to API contracts
-- Cache configuration remains environment-variable driven
-- MCP handlers now use consistent caching patterns matching REST API behavior
-
-## [2.0.0] - 2025-11-22
-
-### Changed
-
-- **Complete TypeScript Migration**: Major breaking change converting entire codebase from JavaScript to TypeScript
-  - **Full Type Safety**: Replaced all JavaScript files with TypeScript equivalents (`.js` → `.ts`)
-  - **Strict TypeScript Configuration**: Enabled strict mode with no implicit any types
-  - **Type Definitions**: Added comprehensive type definitions for all APIs, responses, and internal structures
-  - **Build System**: Migrated from direct Node.js execution to TypeScript compilation with `tsx` for development
-  - **Breaking Change**: Requires TypeScript compilation step for production deployments
-
-### Added
-
-- **Enhanced Type Safety**: Comprehensive type improvements across the entire codebase
-
-  - **Generic Route Handlers**: All Express route handlers now use proper TypeScript generics
-  - **Type-Safe Caching**: Cache interfaces now use generics for compile-time type checking
-  - **Centralized Types**: Created `src/types.ts` with all shared type definitions
-  - **Import Sorting**: Added ESLint rules for consistent import organization
-  - **JSDoc Enhancement**: Updated all JSDoc comments to follow TypeScript best practices
-
-- **MCP Handler Caching**: Added consistent caching to all MCP handlers for improved performance
-  - **Cache Integration**: All 14 MCP tools now support configurable caching
-  - **Performance Optimization**: Reduced API calls through intelligent cache usage
-  - **Consistency**: MCP endpoints now match REST API caching behavior
-
-### Improved
-
-- **Code Architecture**: Major refactoring for better maintainability and type safety
-
-  - **News Endpoints**: Simplified to return `SearchNews[]` arrays with improved type safety
-  - **Ticker Routes**: Consolidated under `/ticker` endpoint hierarchy for better organization
-  - **MCP Server**: Modularized into separate components with improved testability
-  - **Error Responses**: Standardized error response types across all route files
-  - **Cache System**: Enhanced with better memcached support and type safety
-
-- **Documentation**: Comprehensive documentation review and improvements
-  - **README Restructure**: Transformed from implementation-focused to user-focused documentation
-  - **JSDoc Coverage**: Achieved 100% JSDoc coverage across all 45 TypeScript files
-  - **API Documentation**: Enhanced Swagger/OpenAPI specifications for all endpoints
-  - **MCP Documentation**: Updated MCP.md with accurate tool counts and examples
-
-### Technical Details
-
-- **Build Process**: Now requires `npm run build` to compile TypeScript to JavaScript
-- **Development**: Uses `tsx` for hot-reloading during development (`npm run dev`)
-- **Type Checking**: All code now passes strict TypeScript compilation
-- **Test Suite**: All 241 tests passing across 21 test suites
-- **Backward Compatibility**: REST API contracts maintained, MCP tools unchanged
-- **Performance**: Improved through caching enhancements and code optimization
-
-## [1.5.2] - 2025-11-21
-
-### Improved
-
-- **Type Safety & Code Quality**: Comprehensive refactoring to strict TypeScript standards
-  - **Generic Route Handlers**: Implemented generic Express route handlers for all 12 API endpoints
-  - **Type-Safe Caching**: Updated caching system to use generic types (`CacheInterface<T>`) ensuring type safety for cached data
-  - **Centralized Type Definitions**: Created `src/types.ts` consolidating all library and custom types
-  - **Strict Typing**: Replaced `any` and `Record<string, unknown>` with specific, accurate interfaces across the codebase
-  - **Linting**: Resolved all ESLint and TypeScript errors, enforcing strict type checking
-
-### Technical Details
-
-- Refactored all route files to use `router.get<Params, ResBody, ReqBody, Query>`
-- Updated `CacheInterface` and implementations (`NoOpCache`, `MemcachedCache`, `NodeCacheWrapper`) to be generic
-- Added comprehensive interfaces for all API responses and Yahoo Finance data structures
-- Verified codebase integrity with `npm run lint` and full test suite execution (164/164 tests passed)
-
-## [1.5.1] - 2025-11-19
-
-### Fixed
-
-- **ETF Holdings API Compatibility**: Fixed ETF holdings endpoints that were failing due to yahoo-finance2 API changes
-
-  - **Module Deprecation**: The `topHoldings`, `sectorWeightings`, and `equityHoldings` modules are no longer available in yahoo-finance2
-  - **Fallback Implementation**: Implemented graceful fallback to basic ETF quote data when detailed holdings are unavailable
-  - **Error Handling**: Improved error messages explaining API limitations
-  - **MCP Tool Fix**: Updated `get_etf_holdings` MCP tool to work with current yahoo-finance2 API
-  - **REST API Fix**: Updated `/holdings/:symbol` endpoint with same fallback logic
-
-### Technical Details
-
-- ETF holdings endpoints now return basic ETF information (price, market cap, volume) with explanatory note about data availability
-- All tests pass (138/138) including updated MCP server test expecting 14 tools
-- Backward compatible - endpoints still return data, just with different structure when detailed holdings unavailable
-- No breaking changes to API contracts
-
-## [1.5.0] - 2025-11-19
-
-### Added
-
-- **OpenAI Client Compatibility**: Full support for OpenAI function calling format
-
-  - Added `?format=openai` query parameter to `/mcp/tools` endpoint
-  - Returns tool definitions in the exact format expected by OpenAI API
-  - Enables direct integration with OpenAI Node.js and Python clients
-
-- **New MCP Tools**: Added 3 new tools to match REST API functionality
-
-  - `get_etf_holdings`: Get ETF holdings and sector weightings
-  - `get_fund_holdings`: Get mutual fund holdings and composition
-  - `read_news_article`: Extract content from Yahoo Finance news articles
-
-- **Shared News Scraper**: Refactored news scraping logic into reusable utility
-  - Created `src/utils/newsScraper.js` for shared use between REST and MCP
-  - Improved maintainability and reduced code duplication
-
-### Technical Details
-
-- Implemented caching for all new MCP tools matching REST API behavior
-- Added comprehensive tests for OpenAI format compatibility
-- Added example script `examples/openai-client.js` demonstrating integration
-- All tests pass (131/131) including new MCP tool tests
-
-## [1.4.2] - 2025-11-17
-
-### Fixed
-
-- **News Reader Redirect Handling**: Fixed 301/302 redirect errors when Yahoo Finance moves articles
-
-  - **Automatic Redirect Following**: Endpoint now automatically follows HTTP redirects up to 5 levels deep
-  - **Location Header Processing**: Properly extracts and follows Location headers from redirect responses
-  - **URL Resolution**: Handles both absolute and relative redirect URLs correctly
-  - **Loop Prevention**: Implements redirect counter to prevent infinite redirect loops
-  - **Cache Optimization**: Updates caching logic to work with final redirected URLs
-  - **Error Handling**: Improved error messages for redirect-related failures
-
-### Technical Details
-
-- Added `fetchArticleContent()` helper function with redirect handling logic
-- Refactored article extraction into separate `extractArticleContent()` function
-- Enhanced HTTP request handling with proper redirect loop prevention
-- All tests pass (127/127) including existing redirect scenarios
-- Backward compatible - no breaking changes to API responses
-
-## [1.4.1] - 2025-11-17
-
-### Enhanced
-
-- **News Reader API Improvements**: Enhanced `/news_reader` endpoint to accept full Yahoo Finance URLs
-
-  - **URL Format Change**: Endpoint now accepts full URLs instead of just slugs (e.g., `https://finance.yahoo.com/news/article.html`)
-  - **Route Enhancement**: Changed from `/news_reader/:slug` to `/news_reader/*` to support URLs with colons and slashes
-  - **URL Validation**: Added validation to ensure only Yahoo Finance URLs are accepted
-  - **Format Support**: Enhanced content extraction for both `/news/` slug format and `/m/` UUID format articles
-  - **JSON Parsing**: Added support for extracting content from JSON data in script tags for `/m/` URLs
-  - **Error Handling**: Improved error responses with specific messages for invalid URLs and missing articles
-  - **Comprehensive Testing**: Added extensive test coverage including URL validation, format support, URL encoding, and integration tests
-
-### Technical Details
-
-- Route pattern changed to wildcard `*` to capture full URLs including special characters
-- Enhanced HTML parsing with JSON script tag extraction for modern Yahoo Finance article formats
-- Added URL validation middleware to ensure Yahoo Finance domain only
-- Comprehensive test suite expanded from 2 to 7 tests covering all scenarios
-- Backward compatible API design with improved functionality
-- All tests pass (127/127) including new comprehensive news reader test coverage
-
-## [1.4.0] - 2025-11-17
-
-### Added
-
-- **News Reader API**: New endpoint for extracting article content from Yahoo Finance news
-
-  - **New Endpoint**: `GET /news_reader/{slug}` - Extract title and content from Yahoo Finance articles
-  - **Robust Scraping**: HTML parsing with cheerio using multiple CSS selectors for reliable content extraction
-  - **Header Overflow Fix**: Resolved "Parse Error: Header overflow" by implementing native Node.js https module with 128KB header limit
-  - **Performance**: Response caching and rate limiting integration
-  - **Documentation**: Complete Swagger/OpenAPI specification for the new endpoint
-  - **Testing**: Comprehensive test suite with Jest covering success and error scenarios
-
-### Technical Details
-
-- Added cheerio (^1.1.2) and axios (^1.13.2) dependencies for HTML scraping
-- Native Node.js https module implementation to handle Yahoo Finance's large response headers
-- Integrated with existing caching, rate limiting, and error handling infrastructure
-- All tests pass (122/122) including 2 new news reader test cases
-- Backward compatible - no breaking changes to existing API endpoints
-
-## [1.3.3] - 2025-11-16
-
-### Changed
-
-- **API Response Format**: Standardized all API endpoints to return keyed objects instead of arrays
-
-  - **Breaking Change**: History, info, and quote endpoints now return objects with symbol keys for both single and multi-symbol requests
-  - Previous format: `[{symbol: "AAPL", data: {...}}]` → New format: `{"AAPL": {...}}`
-  - Ensures consistent response structure across all endpoints
-  - Improves client-side data handling and reduces ambiguity
-
-### Technical Details
-
-- All endpoints now return consistent keyed object format: `{"SYMBOL": data}`
-- All test suites pass consistently (120/120 tests)
-- Enhanced error logging for API failures without breaking test execution
-- Backward compatible for clients expecting object responses
-
-## [1.3.2] - 2025-11-16
-
-### Added
-
-- **CORS Support**: Added Cross-Origin Resource Sharing (CORS) middleware for web application integration
-
-  - Permissive CORS configuration allowing all origins, methods, and headers
-  - Enables direct API calls from web browsers and frontend applications
-  - Added comprehensive CORS header validation tests
-  - Updated documentation with CORS configuration details
-
-### Technical Details
-
-- CORS middleware integrated with Express.js server
-- All endpoints now support cross-origin requests
-- Backward compatible - no breaking changes to existing API responses
-
-## [1.3.1] - 2025-11-15
-
-### Fixed
-
-- **Financial Statements API Migration**: Migrated from deprecated `quoteSummary` to modern `fundamentalsTimeSeries` API
-
-  - Updated income statements, balance sheets, and cash flow statements to use current Yahoo Finance API
-  - Added schema validation suppression to handle API inconsistencies
-  - Implemented fallback logic for API calls when schema validation fails
-  - Improved data mapping for all financial statement types with proper field handling
-
-- **News Endpoint Implementation**: Fixed `/news` endpoint to return actual news articles instead of empty arrays
-
-  - Integrated `yahoo-finance2` search API with `newsCount` parameter for real news fetching
-  - Returns structured news data with titles, publishers, links, publication dates, and thumbnails
-  - Added related stock tickers and article metadata for comprehensive news context
-  - Updated both REST API and MCP `get_stock_news` tool implementations
-
-### Changed
-
-- **Yahoo Finance API Integration**: Enhanced API client configuration with validation error handling
-  - Added `validation: { logErrors: false, logOptionsErrors: false, throwErrors: false }` to suppress schema validation issues
-  - Improved error resilience for API changes and data inconsistencies
-
-### Technical Details
-
-- Financial statements now use `fundamentalsTimeSeries` API instead of deprecated `quoteSummary` modules
-- News endpoints leverage search API for real-time article retrieval
-- All existing functionality preserved with improved data reliability
-- No breaking changes - fully backward compatible API responses
-
-## [1.3.0] - 2025-11-15
-
-### Added
-
-- **Financial Statements Endpoint**: New `GET /financial/:symbol/:type` endpoint for accessing financial data
-
-  - Support for income statements, balance sheets, and cash flow statements
-  - Period parameter for annual and quarterly data retrieval
-  - Comprehensive financial metrics including revenue, assets, liabilities, and cash flows
-
-- **News and Market Context Endpoint**: New `GET /news/:symbol` endpoint for company information
-
-  - Company profile data (sector, industry, website, description)
-  - Market context and news summary
-  - Count parameter for flexible data retrieval
-
-- **MCP Tool Implementations**: Two new financial data tools for LLM integration
-
-  - `get_financial_statement`: Retrieve financial statements via MCP protocol
-  - `get_stock_news`: Access company context and market information via MCP
-  - Full SSE streaming support for both tools
-
-- **Comprehensive Test Coverage**: 49 new tests added
-
-  - 31 new API endpoint tests (financial and news routes)
-  - 60 comprehensive MCP server tests
-  - Total test suite: 115 tests across 7 test suites
-  - Full error handling and edge case coverage
-
-- **Enhanced Documentation**
-  - Complete MCP.md with detailed tool documentation and examples
-  - Updated README with financial and news endpoint specifications
-  - Curl examples and client integration guides for all new endpoints
-  - MCP tool schemas and usage patterns
-  - Integration examples for Claude and other LLM systems
-
-### Changed
-
-- **Startup Logging**: Updated server startup messages to display all 11 REST endpoints and 4 MCP endpoints
-- **Project Description**: Enhanced README to prominently feature MCP integration for LLM systems
-- **Documentation Structure**: Refactored to reduce repetition by linking comprehensive details to MCP.md
-
-### Technical Details
-
-- All 115 tests passing across 7 test suites
-- Zero breaking changes - fully backward compatible
-- New endpoints follow existing API patterns and conventions
-- Complete error handling for financial data retrieval failures
-
-## [1.2.1] - 2025-11-14
-
-### Added
-
-- **Container Compatibility**: Added `SWAGGER_SERVER_URL` environment variable for container deployments
-  - Swagger UI now supports multiple server URLs for different environments
-  - Automatic fallback to `localhost:3000` for local development
-  - Support for Docker Desktop (`host.docker.internal:3000`) and Linux gateway (`172.17.0.1:3000`)
-  - Interactive server selection dropdown in Swagger UI
-
-### Enhanced
-
-- **Container Deployment**: Improved logging with container-aware startup messages
-  - Helpful hints for setting `SWAGGER_SERVER_URL` in container environments
-  - Clear indication of configured Swagger server URL on startup
-- **Documentation**: Updated README with container deployment examples
-  - Environment variable documentation for `SWAGGER_SERVER_URL`
-  - Docker-specific configuration examples
-
-### Technical Details
-
-- Swagger OpenAPI specification now includes multiple server configurations
-- Environment variable dynamically sets the primary server URL in Swagger docs
-- Backward compatible - no breaking changes to existing deployments
-- All existing tests pass with new container compatibility features
-
-## [1.2.0] - 2025-11-14
-
-### Added
-
-- **Modular Architecture**: Refactored monolithic server into organized modules
-  - `src/routes/index.js`: All 9 API endpoints with Swagger documentation
-  - `src/config/swagger.js`: OpenAPI 3.0 specification configuration
-  - `src/config/cache.js`: Centralized cache configuration
-  - `src/middleware/index.js`: Express middleware setup (rate limiting)
-  - `src/utils/logger.js`: Reusable logging utility
-- **Comprehensive Test Suite**: 66 tests across 6 test files
-  - Logger utility tests
-  - Cache configuration tests
-  - Swagger/OpenAPI configuration tests
-  - Middleware and rate limiting tests
-  - API routes and endpoint integration tests
-  - Full server integration tests
-
-### Changed
-
-- **Reduced Main Server File**: Refactored from 1018 to 110 lines
-  - Clearer separation of concerns
-  - Improved maintainability and readability
-  - Easier to navigate and extend
-- **Documentation**: Updated README with detailed module descriptions
-  - Project structure documentation
-  - Module responsibilities and dependencies
-  - Environment variables guide
-  - Development and testing instructions
-
-### Improved
-
-- **Code Organization**: Clear module boundaries and responsibilities
-  - Easy to locate specific functionality
-  - Better testability of individual components
-  - Simplified dependency management
-- **Developer Experience**: Better structure for adding new features
-  - Reusable configuration modules
-  - Clear patterns for adding endpoints
-  - Comprehensive test examples
-
-### Technical Details
-
-- All 66 tests passing
-- Zero breaking changes - all API functionality preserved
-- ESM module format maintained
-- No changes to API contracts or environment variables
-- Backward compatible with existing deployments
-
-### Previous Changes from Initial 1.2.0
-
-### Added
-
-- **Search API** (`/search/:query`): Search for symbols, news, and financial data
-  - Returns quotes, news, research reports, and other search results
-  - Supports company names, symbols, and keywords
-- **Trending Symbols API** (`/trending/:region`): Get trending symbols by region
-  - Supports multiple regions (US, CA, UK, etc.)
-  - Returns currently trending stock symbols
-- **Stock Recommendations API** (`/recommendations/:symbol`): Get similar stock recommendations
-  - Returns recommended symbols similar to the input symbol
-  - Includes relevance scores for recommendations
-- **Stock Insights API** (`/insights/:symbol`): Comprehensive stock analysis and insights
-  - Company snapshots, analyst recommendations, events, and reports
-  - Detailed fundamental and technical analysis data
-- **Stock Screener API** (`/screener/:type`): Advanced stock screening capabilities
-  - Support for day_gainers, day_losers, most_actives, most_shorted
-  - Configurable result count with default of 25
-  - Uses modern screener API replacing deprecated methods
-
-### Enhanced
-
-- **API Documentation**: Comprehensive README updates with examples for all new endpoints
-- **Error Handling**: Consistent error handling across all new endpoints
-- **Caching**: All new endpoints support configurable caching
-- **Logging**: Detailed logging for all new API calls and responses
-
-### Technical Details
-
-- All new endpoints support multi-ticker requests where applicable
-- Consistent response formats across all APIs
-- Proper rate limiting and caching integration
-- Enhanced server startup logging showing all available endpoints
-
-## [1.1.0] - 2025-11-14
-
-### Added
-
-- **Comprehensive Logging System**: Added configurable logging with `LOG_LEVEL` environment variable
-  - Support for `error`, `warn`, `info`, and `debug` log levels
-  - Detailed endpoint logging including cache hits/misses and API call tracking
-  - Rate limiting violation logging with IP addresses
-  - Server configuration logging on startup
-- **Enhanced Observability**: Improved monitoring and debugging capabilities
-  - Request/response logging for all API endpoints
-  - Error tracking and logging throughout the application
-  - Performance monitoring through detailed debug logs
-
-### Changed
-
-- **Node.js Version**: Updated to Node.js 22 for better yahoo-finance2 compatibility
-- **Logging Infrastructure**: Complete overhaul of logging system for production monitoring
-
-### Technical Details
-
-- Configurable logging verbosity via `LOG_LEVEL` environment variable
-- Structured logging with timestamps and log levels
-- Comprehensive error handling with detailed logging
-- Enhanced debugging capabilities for troubleshooting
-
-## [1.0.0] - 2025-11-14
-
-### Added
-
-- Initial release of Yahoo Finance API server
-- Express.js API with endpoints for quotes, historical data, and company information
-- Multi-ticker support with robust error handling
-- Rate limiting and in-memory caching
-- Docker multi-stage build with health checks
-- Comprehensive Jest test suite
-- GitHub Actions CI/CD pipeline
-- Docker Compose for local development
+- **Runtime**: Node.js 22 with ES modules and TypeScript
+- **Framework**: Express.js with comprehensive middleware stack
+- **APIs**: yahoo-finance2 v3, CoinStats API, Alternative.me Fear & Greed Index
+- **MCP**: @modelcontextprotocol/sdk v1.23.0 with Zod schema validation
+- **Caching**: NodeCache with extensible backend support
+- **Testing**: Jest with 100% route coverage and integration tests
+- **Documentation**: OpenAPI 3.0 specifications with Swagger UI
+- **Container**: Docker multi-stage build with health checks
+- **CI/CD**: GitHub Actions pipeline for automated testing and deployment
 
 ### Features
 
-- `/health` - Health check endpoint
-- `/quote/:symbols` - Current stock prices for multiple symbols
-- `/history/:symbols` - Historical price data with configurable period/interval
-- `/info/:symbols` - Company information and profiles
-- Environment variable configuration for rate limiting, caching, and port
-- Proper error handling with partial failure support for multi-ticker requests
+- **Multi-Asset Support**: Stocks, ETFs, mutual funds, cryptocurrencies, and market indices
+- **Real-Time Data**: Live quotes, prices, and market sentiment
+- **Historical Analysis**: Flexible period and interval configurations
+- **Advanced Filtering**: Sorting, pagination, and currency conversion
+- **AI Integration**: Native MCP support for LLM applications
+- **Web Ready**: CORS-enabled for direct browser integration
+- **Enterprise Features**: Rate limiting, caching, and comprehensive logging
 
-### Technical Details
+### Migration Notes
 
-- Node.js 20 with ES modules
-- yahoo-finance2 v3 library for Yahoo Finance API integration
-- Express.js framework with middleware for rate limiting and caching
-- Docker containerization with multi-stage build
-- Jest testing framework with comprehensive test coverage
+- **New Project**: This is the initial release - no migration required
+- **API Keys**: Configure `COINSTATS_API_KEY` environment variable for cryptocurrency features
+- **Environment Setup**: Copy `.env.example` to `.env` and configure as needed
+- **Docker Deployment**: Use provided Docker Compose configuration for containerized deployment
