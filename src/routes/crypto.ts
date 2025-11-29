@@ -17,6 +17,7 @@ import type {
   CoinStatsBtcDominanceResponse,
   CoinStatsFearGreedResponse,
   CoinStatsRainbowChartResponse,
+  CoinStatsNewsResponse,
   ErrorResponse,
 } from "../types";
 import { log } from "../utils/logger";
@@ -618,13 +619,18 @@ router.get(
     const validTypes = ["24h", "1w", "1m", "3m", "6m", "1y", "all"];
     if (typeof type !== "string" || !validTypes.includes(type)) {
       return res.status(400).json({
-        error: `Invalid type parameter. Valid options: ${validTypes.join(", ")}`,
+        error: `Invalid type parameter. Valid options: ${validTypes.join(
+          ", "
+        )}`,
       });
     }
 
     const cacheKey = `crypto:insights:btc-dominance:${type}`;
 
-    log("info", `Crypto BTC dominance request for type: ${type} from ${req.ip}`);
+    log(
+      "info",
+      `Crypto BTC dominance request for type: ${type} from ${req.ip}`
+    );
 
     if (CACHE_ENABLED) {
       const cached = await cache.get<CoinStatsBtcDominanceResponse>(cacheKey);
@@ -641,11 +647,23 @@ router.get(
         { type }
       );
 
-      log("debug", `Crypto BTC dominance: ${result.data?.length || 0} data points retrieved`);
+      log(
+        "debug",
+        `Crypto BTC dominance: ${
+          result.data?.length || 0
+        } data points retrieved`
+      );
 
       if (CACHE_ENABLED) {
-        await cache.set<CoinStatsBtcDominanceResponse>(cacheKey, result, CACHE_TTL_SHORT);
-        log("debug", `Cached crypto BTC dominance ${type} with ${CACHE_TTL_SHORT}s TTL`);
+        await cache.set<CoinStatsBtcDominanceResponse>(
+          cacheKey,
+          result,
+          CACHE_TTL_SHORT
+        );
+        log(
+          "debug",
+          `Cached crypto BTC dominance ${type} with ${CACHE_TTL_SHORT}s TTL`
+        );
       }
 
       res.json(result);
@@ -727,8 +745,15 @@ router.get(
       log("debug", `Crypto Fear and Greed Index retrieved: ${result.name}`);
 
       if (CACHE_ENABLED) {
-        await cache.set<CoinStatsFearGreedResponse>(cacheKey, result, CACHE_TTL_SHORT);
-        log("debug", `Cached crypto Fear and Greed Index with ${CACHE_TTL_SHORT}s TTL`);
+        await cache.set<CoinStatsFearGreedResponse>(
+          cacheKey,
+          result,
+          CACHE_TTL_SHORT
+        );
+        log(
+          "debug",
+          `Cached crypto Fear and Greed Index with ${CACHE_TTL_SHORT}s TTL`
+        );
       }
 
       res.json(result);
@@ -798,7 +823,9 @@ router.get(
     const validCoinIds = ["bitcoin", "ethereum"];
     if (!validCoinIds.includes(coinId)) {
       return res.status(400).json({
-        error: `Invalid coinId parameter. Valid options: ${validCoinIds.join(", ")}`,
+        error: `Invalid coinId parameter. Valid options: ${validCoinIds.join(
+          ", "
+        )}`,
       });
     }
 
@@ -820,16 +847,268 @@ router.get(
         `/insights/rainbow-chart/${coinId}`
       );
 
-      log("debug", `Crypto Rainbow Chart: ${result?.length || 0} data points retrieved for ${coinId}`);
+      log(
+        "debug",
+        `Crypto Rainbow Chart: ${
+          result?.length || 0
+        } data points retrieved for ${coinId}`
+      );
 
       if (CACHE_ENABLED) {
-        await cache.set<CoinStatsRainbowChartResponse>(cacheKey, result, CACHE_TTL_SHORT);
-        log("debug", `Cached crypto Rainbow Chart ${coinId} with ${CACHE_TTL_SHORT}s TTL`);
+        await cache.set<CoinStatsRainbowChartResponse>(
+          cacheKey,
+          result,
+          CACHE_TTL_SHORT
+        );
+        log(
+          "debug",
+          `Cached crypto Rainbow Chart ${coinId} with ${CACHE_TTL_SHORT}s TTL`
+        );
       }
 
       res.json(result);
     } catch (err) {
       handleCryptoError(res, "rainbow-chart", err);
+    }
+  }
+);
+
+// ============================================================================
+// News Endpoint
+// ============================================================================
+
+/**
+ * @swagger
+ * /crypto/news:
+ *   get:
+ *     summary: Get cryptocurrency news by type
+ *     description: Retrieve cryptocurrency news articles filtered by type (handpicked, trending, latest, bullish, bearish)
+ *     tags: [Crypto]
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         description: Type of news to retrieve
+ *         schema:
+ *           type: string
+ *           enum: [handpicked, trending, latest, bullish, bearish]
+ *           default: "latest"
+ *         example: "latest"
+ *       - in: query
+ *         name: page
+ *         description: Page number to retrieve (1-based indexing)
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         example: 1
+ *       - in: query
+ *         name: limit
+ *         description: Number of items to return per page
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *           maximum: 100
+ *         example: 20
+ *     responses:
+ *       200:
+ *         description: Cryptocurrency news articles
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     description: Unique identifier for the news article
+ *                   feedDate:
+ *                     type: number
+ *                     description: Unix timestamp when the news was published
+ *                   source:
+ *                     type: string
+ *                     description: Name of the news source
+ *                   title:
+ *                     type: string
+ *                     description: Title of the news article
+ *                   isFeatured:
+ *                     type: boolean
+ *                     description: Whether this news item is featured
+ *                   link:
+ *                     type: string
+ *                     description: Direct link to the full news article
+ *                   sourceLink:
+ *                     type: string
+ *                     description: URL of the news source website
+ *                   imgUrl:
+ *                     type: string
+ *                     description: URL of the article image
+ *                   reactionsCount:
+ *                     type: object
+ *                     description: Count of different reaction types
+ *                   reactions:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                     description: Array of reaction identifiers
+ *                   shareURL:
+ *                     type: string
+ *                     description: Shareable URL for this news item
+ *                   relatedCoins:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                     description: Array of related cryptocurrency identifiers
+ *                   content:
+ *                     type: boolean
+ *                     description: Whether full content is available
+ *                   bigImg:
+ *                     type: boolean
+ *                     description: Whether to display with large image
+ *                   searchKeyWords:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                     description: Array of search keywords
+ *                   description:
+ *                     type: string
+ *                     description: Brief description of the news article
+ *                   coins:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         coinKeyWords:
+ *                           type: string
+ *                         coinPercent:
+ *                           type: number
+ *                         coinTitleKeyWords:
+ *                           type: string
+ *                         coinNameKeyWords:
+ *                           type: string
+ *                         coinIdKeyWords:
+ *                           type: string
+ *             example:
+ *               - id: "376f390df50a1d44cb5593c9bff6faafabed18ee90e0d4d737d3b6d3eea50c80"
+ *                 feedDate: 1756204736000
+ *                 source: "CoinGape"
+ *                 title: "Why is XRP Price Down Even After the Ripple Lawsuit End?"
+ *                 isFeatured: false
+ *                 link: "https://coingape.com/trending/why-is-xrp-price-down-even-after-the-ripple-lawsuit-end/"
+ *                 sourceLink: "https://coingape.com/"
+ *                 imgUrl: "https://coingape.com/wp-content/uploads/2025/08/Why-is-XRP-Price-Down.webp"
+ *                 reactionsCount: {"2": 13, "3": 18}
+ *                 reactions: []
+ *                 shareURL: "https://coinstats.app/news/376f390df50a1d44cb5593c9bff6faafabed18ee90e0d4d737d3b6d3eea50c80_Why-is-XRP-Price-Down-Even-After-the-Ripple-Lawsuit-End"
+ *                 relatedCoins: ["ripple", "0xb9ce0dd29c91e02d4620f57a66700fc5e41d6d15_cronos"]
+ *                 content: true
+ *                 bigImg: false
+ *                 searchKeyWords: ["xrp", "XRP"]
+ *                 description: "coingape.com."
+ *                 coins: [{"coinKeyWords": "XRP", "coinPercent": -5.11, "coinTitleKeyWords": "XRP", "coinNameKeyWords": "XRP", "coinIdKeyWords": "ripple"}]
+ *       400:
+ *         description: Bad request - Invalid parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get(
+  "/news",
+  async (
+    req: Request<
+      unknown,
+      unknown,
+      unknown,
+      { type?: string; page?: string; limit?: string }
+    >,
+    res: Response<CoinStatsNewsResponse | ErrorResponse>
+  ) => {
+    const { type = "latest", page = "1", limit = "20" } = req.query;
+
+    // Validate type parameter
+    const validTypes = [
+      "handpicked",
+      "trending",
+      "latest",
+      "bullish",
+      "bearish",
+    ];
+    if (typeof type !== "string" || !validTypes.includes(type)) {
+      return res.status(400).json({
+        error: `Invalid type parameter. Valid options: ${validTypes.join(
+          ", "
+        )}`,
+      });
+    }
+
+    // Validate page parameter
+    const pageNum = parseInt(page, 10);
+    if (isNaN(pageNum) || pageNum < 1) {
+      return res.status(400).json({
+        error: "Invalid page parameter. Must be a positive integer.",
+      });
+    }
+
+    // Validate limit parameter
+    const limitNum = parseInt(limit, 10);
+    if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+      return res.status(400).json({
+        error: "Invalid limit parameter. Must be between 1 and 100.",
+      });
+    }
+
+    const cacheKey = `crypto:news:${type}:${page}:${limit}`;
+
+    log(
+      "info",
+      `Crypto news request - type: ${type}, page: ${page}, limit: ${limit} from ${req.ip}`
+    );
+
+    if (CACHE_ENABLED) {
+      const cached = await cache.get<CoinStatsNewsResponse>(cacheKey);
+      if (cached) {
+        log("debug", `Cache hit for crypto news: ${type}`);
+        return res.json(cached);
+      }
+      log("debug", `Cache miss for crypto news: ${type}`);
+    }
+
+    try {
+      const params: Record<string, string> = {
+        page,
+        limit,
+      };
+
+      const result = await fetchFromCoinStats<CoinStatsNewsResponse>(
+        `/news/type/${type}`,
+        params
+      );
+
+      log(
+        "debug",
+        `Crypto news: ${
+          result?.length || 0
+        } articles retrieved for type: ${type}`
+      );
+
+      if (CACHE_ENABLED) {
+        await cache.set<CoinStatsNewsResponse>(
+          cacheKey,
+          result,
+          CACHE_TTL_SHORT
+        );
+        log("debug", `Cached crypto news ${type} with ${CACHE_TTL_SHORT}s TTL`);
+      }
+
+      res.json(result);
+    } catch (err) {
+      handleCryptoError(res, "news", err);
     }
   }
 );

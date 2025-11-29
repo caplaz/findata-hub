@@ -207,43 +207,6 @@ To use the cryptocurrency endpoints, you'll need a CoinStats API key:
 COINSTATS_API_KEY=your-api-key-here
 ```
 
-**Cryptocurrency API Examples:**
-
-```bash
-# Get global cryptocurrency market statistics
-curl "http://localhost:3000/crypto/market"
-
-# Get top 10 cryptocurrencies by market cap
-curl "http://localhost:3000/crypto/coins?limit=10&sortBy=marketCap&sortDir=desc"
-
-# Get Bitcoin data
-curl "http://localhost:3000/crypto/coins/bitcoin"
-
-# Search for Ethereum with EUR pricing
-curl "http://localhost:3000/crypto/coins/ethereum?currency=EUR"
-
-# Get cryptocurrencies sorted by 24h price change (gainers)
-curl "http://localhost:3000/crypto/coins?sortBy=priceChange1d&sortDir=desc&limit=10"
-
-# Filter by specific coins
-curl "http://localhost:3000/crypto/coins?coinIds=bitcoin,ethereum,solana"
-
-# Get Fear and Greed Index
-curl "http://localhost:3000/crypto/insights/fear-greed"
-
-# Get Bitcoin dominance data for the last year
-curl "http://localhost:3000/crypto/insights/btc-dominance?type=1y"
-
-# Get Bitcoin dominance data for the last 24 hours
-curl "http://localhost:3000/crypto/insights/btc-dominance?type=24h"
-
-# Get Rainbow Chart data for Bitcoin
-curl "http://localhost:3000/crypto/insights/rainbow-chart/bitcoin"
-
-# Get Rainbow Chart data for Ethereum
-curl "http://localhost:3000/crypto/insights/rainbow-chart/ethereum"
-```
-
 ## CORS (Cross-Origin Resource Sharing)
 
 The API server includes CORS support to allow cross-origin requests from web applications. CORS is configured to allow requests from **any origin**, enabling integration with web applications hosted on different domains.

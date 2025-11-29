@@ -65,6 +65,7 @@ export type {
   CoinStatsBtcDominanceResponse,
   CoinStatsFearGreedResponse,
   CoinStatsRainbowChartResponse,
+  CoinStatsNewsResponse,
 } from "./types/coinstats";
 
 /**

@@ -123,3 +123,42 @@ export interface CoinStatsRainbowChartDataPoint {
  * CoinStats Rainbow Chart response (array of data points)
  */
 export type CoinStatsRainbowChartResponse = CoinStatsRainbowChartDataPoint[];
+
+/**
+ * CoinStats news coin data associated with news articles
+ */
+export interface CoinStatsNewsCoin {
+  coinKeyWords: string;
+  coinPercent: number;
+  coinTitleKeyWords: string;
+  coinNameKeyWords: string;
+  coinIdKeyWords: string;
+}
+
+/**
+ * CoinStats news article data
+ */
+export interface CoinStatsNewsArticle {
+  id: string;
+  feedDate: number;
+  source: string;
+  title: string;
+  isFeatured: boolean;
+  link: string;
+  sourceLink: string;
+  imgUrl: string;
+  reactionsCount: Record<string, number>;
+  reactions: string[];
+  shareURL: string;
+  relatedCoins: string[];
+  content: boolean;
+  bigImg: boolean;
+  searchKeyWords: string[];
+  description?: string;
+  coins: CoinStatsNewsCoin[];
+}
+
+/**
+ * CoinStats news response (array of news articles)
+ */
+export type CoinStatsNewsResponse = CoinStatsNewsArticle[];
