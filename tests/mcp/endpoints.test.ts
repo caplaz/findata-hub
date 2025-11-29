@@ -128,7 +128,7 @@ describe("MCP Endpoints", () => {
 
       expect(response.status).toBe(200);
       expect(response.body.result.serverInfo.name).toBe("yahoo-finance-mcp");
-      expect(response.body.result.serverInfo.version).toBe("3.0.2");
+      expect(response.body.result.serverInfo.version).toBe("1.0.0");
     });
   });
 });

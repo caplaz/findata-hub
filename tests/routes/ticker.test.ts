@@ -4,6 +4,18 @@
  * @module tests/routes/ticker
  */
 
+import { jest } from "@jest/globals";
+
+// Mock the yahoo-finance2 module before importing routes
+const mockYahooFinance = {
+  quoteSummary: jest.fn() as any,
+  chart: jest.fn() as any,
+};
+
+jest.unstable_mockModule("yahoo-finance2", () => ({
+  default: mockYahooFinance,
+}));
+
 import request from "supertest";
 import express from "express";
 import tickerRoutes from "../../src/routes/ticker";
@@ -16,26 +28,67 @@ app.use((err: any, req: any, res: any, next: any) =>
 );
 
 describe("Ticker Routes", () => {
+  // Skip all tests that depend on Yahoo Finance API when it's down
+  const yahooApiDown = process.env.SKIP_YAHOO_TESTS === "true";
+
+  afterEach(() => {
+    mockYahooFinance.quoteSummary.mockClear();
+  });
+
   describe("GET /ticker/:ticker - Company Info", () => {
-    test("should return 200 for valid symbol", async () => {
-      const res = await request(app).get("/ticker/AAPL");
+    (yahooApiDown ? test.skip : test)(
+      "should return 200 for valid symbol",
+      async () => {
+        mockYahooFinance.quoteSummary.mockResolvedValue({
+          assetProfile: { companyName: "Apple Inc." },
+        });
+        const res = await request(app).get("/ticker/AAPL");
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveProperty("assetProfile");
+      }
+    );
 
-      expect([200, 500]).toContain(res.status);
-    });
+    (yahooApiDown ? test.skip : test)(
+      "should uppercase the ticker symbol",
+      async () => {
+        mockYahooFinance.quoteSummary.mockResolvedValue({
+          assetProfile: { companyName: "Apple Inc." },
+        });
+        const res = await request(app).get("/ticker/aapl");
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveProperty("assetProfile");
+      }
+    );
 
-    test("should uppercase the ticker symbol", async () => {
-      const res = await request(app).get("/ticker/aapl");
+    (yahooApiDown ? test.skip : test)(
+      "should handle multiple symbol requests",
+      async () => {
+        mockYahooFinance.quoteSummary
+          .mockResolvedValueOnce({
+            assetProfile: { companyName: "Apple Inc." },
+          })
+          .mockResolvedValueOnce({
+            assetProfile: { companyName: "Microsoft Corp." },
+          });
+        const res1 = await request(app).get("/ticker/AAPL");
+        const res2 = await request(app).get("/ticker/MSFT");
 
-      expect([200, 500]).toContain(res.status);
-    });
+        expect(res1.status).toBe(200);
+        expect(res2.status).toBe(200);
+        expect(res1.body).toHaveProperty("assetProfile");
+        expect(res2.body).toHaveProperty("assetProfile");
+      }
+    );
 
-    test("should handle multiple symbol requests", async () => {
-      const res1 = await request(app).get("/ticker/AAPL");
-      const res2 = await request(app).get("/ticker/MSFT");
-
-      expect([200, 500]).toContain(res1.status);
-      expect([200, 500]).toContain(res2.status);
-    });
+    (yahooApiDown ? test.skip : test)(
+      "should handle API errors gracefully",
+      async () => {
+        mockYahooFinance.quoteSummary.mockRejectedValue(new Error("API error"));
+        const res = await request(app).get("/ticker/INVALID");
+        expect(res.status).toBe(404);
+        expect(res.body).toHaveProperty("error");
+      }
+    );
   });
 
   describe("GET /ticker/:ticker/:type - Financial Statements", () => {

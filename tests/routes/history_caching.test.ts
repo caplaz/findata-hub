@@ -10,24 +10,26 @@ import express from "express";
 
 // Mock cache
 const mockCache = {
-    get: jest.fn() as any,
-    set: jest.fn() as any,
+  get: jest.fn() as any,
+  set: jest.fn() as any,
 };
 
 jest.mock("../../src/config/cache.ts", () => ({
-    cache: mockCache,
-    CACHE_ENABLED: true,
-    CACHE_TTL_SHORT: 10,
+  cache: mockCache,
+  CACHE_ENABLED: true,
+  CACHE_TTL_SHORT: 10,
 }));
 
 // Mock yahoo-finance2
-const mockYahooFinanceInstance = {
-    chart: jest.fn() as any,
+const mockYahooFinance = {
+  chart: jest.fn() as any,
 };
 
-jest.mock("../../src/yahoo.ts", () => ({
-    __esModule: true,
-    default: mockYahooFinanceInstance,
+const MockYahooFinance = jest.fn().mockImplementation(() => mockYahooFinance);
+
+jest.mock("yahoo-finance2", () => ({
+  __esModule: true,
+  default: MockYahooFinance,
 }));
 
 // Import the router AFTER mocking
@@ -38,59 +40,57 @@ app.use(express.json());
 app.use("/history", historyRouter);
 
 describe("History Route Caching", () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
-        mockCache.get.mockResolvedValue(undefined);
-        mockCache.set.mockResolvedValue(undefined);
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockCache.get.mockResolvedValue(undefined);
+    mockCache.set.mockResolvedValue(undefined);
+  });
+
+  test("should check cache for each symbol individually", async () => {
+    // Setup: AAPL is in cache, MSFT is not
+    const mockCachedAAPL = [{ date: "2023-01-01", close: 150 }];
+
+    mockCache.get.mockImplementation(async (key: string) => {
+      if (key.includes("AAPL")) return mockCachedAAPL;
+      return undefined;
     });
 
-    test("should check cache for each symbol individually", async () => {
-        // Setup: AAPL is in cache, MSFT is not
-        const mockCachedAAPL = [
-            { date: "2023-01-01", close: 150 }
-        ];
+    const mockHistoryMSFT = {
+      quotes: [{ date: "2023-01-01", close: 300 }],
+    };
+    mockYahooFinance.chart.mockResolvedValue(mockHistoryMSFT);
 
-        mockCache.get.mockImplementation(async (key: string) => {
-            if (key.includes("AAPL")) return mockCachedAAPL;
-            return undefined;
-        });
+    const response = await request(app).get("/history/AAPL,MSFT");
 
-        const mockHistoryMSFT = {
-            quotes: [{ date: "2023-01-01", close: 300 }]
-        };
-        mockYahooFinanceInstance.chart.mockResolvedValue(mockHistoryMSFT);
+    // Should have called cache.get for both
+    expect(mockCache.get).toHaveBeenCalledWith(expect.stringContaining("AAPL"));
+    expect(mockCache.get).toHaveBeenCalledWith(expect.stringContaining("MSFT"));
 
-        const response = await request(app).get("/history/AAPL,MSFT");
+    // Should only fetch MSFT from API
+    expect(mockYahooFinance.chart).toHaveBeenCalledTimes(1);
+    expect(mockYahooFinance.chart).toHaveBeenCalledWith(
+      "MSFT",
+      expect.any(Object)
+    );
 
-        // Should have called cache.get for both
-        expect(mockCache.get).toHaveBeenCalledWith(expect.stringContaining("AAPL"));
-        expect(mockCache.get).toHaveBeenCalledWith(expect.stringContaining("MSFT"));
+    // Response should contain both
+    expect(response.body).toHaveProperty("AAPL");
+    expect(response.body).toHaveProperty("MSFT");
+    expect(response.body.AAPL).toEqual(mockCachedAAPL);
+    expect(response.body.MSFT).toEqual(mockHistoryMSFT.quotes);
+  });
 
-        // Should only fetch MSFT from API
-        expect(mockYahooFinanceInstance.chart).toHaveBeenCalledTimes(1);
-        expect(mockYahooFinanceInstance.chart).toHaveBeenCalledWith(
-            "MSFT",
-            expect.any(Object)
-        );
+  test("should cache newly fetched symbols individually", async () => {
+    const mockHistory = {
+      quotes: [{ date: "2023-01-01", close: 100 }],
+    };
+    mockYahooFinance.chart.mockResolvedValue(mockHistory);
 
-        // Response should contain both
-        expect(response.body).toHaveProperty("AAPL");
-        expect(response.body).toHaveProperty("MSFT");
-        expect(response.body.AAPL).toEqual(mockCachedAAPL);
-        expect(response.body.MSFT).toEqual(mockHistoryMSFT.quotes);
-    });
+    await request(app).get("/history/GOOGL");
 
-    test("should cache newly fetched symbols individually", async () => {
-        const mockHistory = {
-            quotes: [{ date: "2023-01-01", close: 100 }]
-        };
-        mockYahooFinanceInstance.chart.mockResolvedValue(mockHistory);
-
-        await request(app).get("/history/GOOGL");
-
-        expect(mockCache.set).toHaveBeenCalledWith(
-            expect.stringContaining("history:GOOGL"),
-            mockHistory.quotes
-        );
-    });
+    expect(mockCache.set).toHaveBeenCalledWith(
+      expect.stringContaining("history:GOOGL"),
+      mockHistory.quotes
+    );
+  });
 });
