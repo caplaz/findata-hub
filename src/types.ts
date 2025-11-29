@@ -10,7 +10,10 @@
 
 import type { Quote } from "yahoo-finance2/esm/src/modules/quote";
 
-// Re-export types from yahoo-finance2 library
+// ============================================================================
+// Yahoo Finance API Types
+// ============================================================================
+
 export type {
   QuoteSummaryResult,
   AssetProfile,
@@ -21,61 +24,25 @@ export type {
   RecommendationTrend,
   UpgradeDowngradeHistory,
   InsiderTransactions,
-} from "yahoo-finance2/esm/src/modules/quoteSummary-iface";
-
-export type {
   SearchResult,
   SearchNews,
-} from "yahoo-finance2/esm/src/modules/search";
-export type { RecommendationsBySymbolResponse } from "yahoo-finance2/esm/src/modules/recommendationsBySymbol";
-export type {
+  RecommendationsBySymbolResponse,
   ChartResultArray,
   ChartOptions,
-} from "yahoo-finance2/esm/src/modules/chart";
-export type {
   HistoricalHistoryResult,
   HistoricalOptions,
-} from "yahoo-finance2/esm/src/modules/historical";
-export type { Quote } from "yahoo-finance2/esm/src/modules/quote";
-export type { TrendingSymbolsResult } from "yahoo-finance2/esm/src/modules/trendingSymbols";
-export type {
+  Quote,
+  TrendingSymbolsResult,
   ScreenerResult,
   PredefinedScreenerModules,
-} from "yahoo-finance2/esm/src/modules/screener";
-
-/**
- * Fundamentals Time Series types
- */
-export type {
   FundamentalsTimeSeriesResult,
   FundamentalsTimeSeriesResults,
   FundamentalsTimeSeriesFinancialsResult,
   FundamentalsTimeSeriesBalanceSheetResult,
   FundamentalsTimeSeriesCashFlowResult,
-} from "yahoo-finance2/esm/src/modules/fundamentalsTimeSeries";
-
-/**
- * News article JSON structure (for scraping)
- */
-export interface NewsJson {
-  headline?: string;
-  title?: string;
-  body?: {
-    items?: Array<{
-      data?: {
-        storyAtoms?: unknown[];
-      };
-    }>;
-  };
-}
-
-/**
- * Story atom structure (for news content extraction)
- */
-export interface StoryAtom {
-  type: string;
-  content: string;
-}
+  NewsJson,
+  StoryAtom,
+} from "./types/yahoo";
 
 /**
  * Standard error response structure
