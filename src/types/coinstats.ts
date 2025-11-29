@@ -75,3 +75,51 @@ export interface CoinStatsMarketData {
   volumeChange: number;
   btcDominanceChange: number;
 }
+
+/**
+ * CoinStats BTC dominance data point
+ */
+export interface CoinStatsBtcDominanceDataPoint {
+  timestamp: number;
+  btcDominance: number;
+}
+
+/**
+ * CoinStats BTC dominance response
+ */
+export interface CoinStatsBtcDominanceResponse {
+  data: CoinStatsBtcDominanceDataPoint[];
+}
+
+/**
+ * CoinStats Fear and Greed index data point
+ */
+export interface CoinStatsFearGreedDataPoint {
+  value: number;
+  value_classification: string;
+  timestamp: number;
+  update_time?: string;
+}
+
+/**
+ * CoinStats Fear and Greed response
+ */
+export interface CoinStatsFearGreedResponse {
+  name: string;
+  now: CoinStatsFearGreedDataPoint;
+  yesterday: CoinStatsFearGreedDataPoint;
+  lastWeek: CoinStatsFearGreedDataPoint;
+}
+
+/**
+ * CoinStats Rainbow Chart data point
+ */
+export interface CoinStatsRainbowChartDataPoint {
+  price: string;
+  time: string;
+}
+
+/**
+ * CoinStats Rainbow Chart response (array of data points)
+ */
+export type CoinStatsRainbowChartResponse = CoinStatsRainbowChartDataPoint[];

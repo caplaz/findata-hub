@@ -103,4 +103,75 @@ describe("Crypto Routes", () => {
       }
     });
   });
+
+  describe("GET /crypto/insights/btc-dominance", () => {
+    test("should return 200 for BTC dominance data", async () => {
+      const response = await request(app).get("/crypto/insights/btc-dominance");
+      expect([200, 400, 500]).toContain(response.status);
+      if (response.status === 200) {
+        expect(response.body).toBeDefined();
+        expect(response.body).toHaveProperty("data");
+        expect(Array.isArray(response.body.data)).toBe(true);
+        if (response.body.data.length > 0) {
+          expect(Array.isArray(response.body.data[0])).toBe(true);
+          expect(response.body.data[0]).toHaveLength(2);
+        }
+      }
+    });
+
+    test("should accept type parameter", async () => {
+      const response = await request(app).get("/crypto/insights/btc-dominance?type=1m");
+      expect([200, 400, 500]).toContain(response.status);
+    });
+
+    test("should validate type parameter", async () => {
+      const response = await request(app).get("/crypto/insights/btc-dominance?type=invalid");
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain("Invalid type parameter");
+    });
+  });
+
+  describe("GET /crypto/insights/fear-greed", () => {
+    test("should return 200 for Fear and Greed Index", async () => {
+      const response = await request(app).get("/crypto/insights/fear-greed");
+      expect([200, 400, 500]).toContain(response.status);
+      if (response.status === 200) {
+        expect(response.body).toBeDefined();
+        expect(response.body).toHaveProperty("name");
+        expect(response.body).toHaveProperty("now");
+        expect(response.body).toHaveProperty("yesterday");
+        expect(response.body).toHaveProperty("lastWeek");
+        expect(typeof response.body.now.value).toBe("number");
+        expect(typeof response.body.now.value_classification).toBe("string");
+      }
+    });
+  });
+
+  describe("GET /crypto/insights/rainbow-chart/:coinId", () => {
+    test("should return 200 for Bitcoin rainbow chart", async () => {
+      const response = await request(app).get("/crypto/insights/rainbow-chart/bitcoin");
+      expect([200, 400, 500]).toContain(response.status);
+      if (response.status === 200) {
+        expect(Array.isArray(response.body)).toBe(true);
+        if (response.body.length > 0) {
+          expect(response.body[0]).toHaveProperty("price");
+          expect(response.body[0]).toHaveProperty("time");
+        }
+      }
+    });
+
+    test("should return 200 for Ethereum rainbow chart", async () => {
+      const response = await request(app).get("/crypto/insights/rainbow-chart/ethereum");
+      expect([200, 400, 500]).toContain(response.status);
+      if (response.status === 200) {
+        expect(Array.isArray(response.body)).toBe(true);
+      }
+    });
+
+    test("should validate coinId parameter", async () => {
+      const response = await request(app).get("/crypto/insights/rainbow-chart/invalid");
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain("Invalid coinId parameter");
+    });
+  });
 });

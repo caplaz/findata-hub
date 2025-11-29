@@ -227,6 +227,21 @@ curl "http://localhost:3000/crypto/coins?sortBy=priceChange1d&sortDir=desc&limit
 
 # Filter by specific coins
 curl "http://localhost:3000/crypto/coins?coinIds=bitcoin,ethereum,solana"
+
+# Get Fear and Greed Index
+curl "http://localhost:3000/crypto/insights/fear-greed"
+
+# Get Bitcoin dominance data for the last year
+curl "http://localhost:3000/crypto/insights/btc-dominance?type=1y"
+
+# Get Bitcoin dominance data for the last 24 hours
+curl "http://localhost:3000/crypto/insights/btc-dominance?type=24h"
+
+# Get Rainbow Chart data for Bitcoin
+curl "http://localhost:3000/crypto/insights/rainbow-chart/bitcoin"
+
+# Get Rainbow Chart data for Ethereum
+curl "http://localhost:3000/crypto/insights/rainbow-chart/ethereum"
 ```
 
 ## CORS (Cross-Origin Resource Sharing)

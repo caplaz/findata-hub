@@ -62,6 +62,9 @@ export type {
   CoinStatsCoin,
   CoinStatsResponse,
   CoinStatsMarketData,
+  CoinStatsBtcDominanceResponse,
+  CoinStatsFearGreedResponse,
+  CoinStatsRainbowChartResponse,
 } from "./types/coinstats";
 
 /**

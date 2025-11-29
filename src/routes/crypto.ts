@@ -14,6 +14,9 @@ import type {
   CoinStatsResponse,
   CoinStatsCoin,
   CoinStatsMarketData,
+  CoinStatsBtcDominanceResponse,
+  CoinStatsFearGreedResponse,
+  CoinStatsRainbowChartResponse,
   ErrorResponse,
 } from "../types";
 import { log } from "../utils/logger";
@@ -554,7 +557,281 @@ router.get(
   }
 );
 
-export default router;
+// ============================================================================
+// Insights Endpoints
+// ============================================================================
 
-// Export for testing
-export { fetchFromCoinStats, handleCryptoError };
+/**
+ * @swagger
+ * /crypto/insights/btc-dominance:
+ *   get:
+ *     summary: Get Bitcoin dominance data
+ *     description: Retrieve Bitcoin's market dominance percentage over time
+ *     tags: [Crypto]
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         description: Time period for the data
+ *         schema:
+ *           type: string
+ *           enum: [24h, 1w, 1m, 3m, 6m, 1y, all]
+ *           default: "1y"
+ *         example: "1y"
+ *     responses:
+ *       200:
+ *         description: Bitcoin dominance data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: array
+ *                     items:
+ *                       oneOf:
+ *                         - type: number
+ *                         - type: number
+ *                     description: "[timestamp, btcDominancePercentage]"
+ *             example:
+ *               data:
+ *                 - [1746441300, 61.59]
+ *                 - [1746441400, 62.1]
+ *                 - [1746441500, 61.85]
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get(
+  "/insights/btc-dominance",
+  async (
+    req: Request,
+    res: Response<CoinStatsBtcDominanceResponse | ErrorResponse>
+  ) => {
+    const { type = "1y" } = req.query;
+
+    // Validate type parameter
+    const validTypes = ["24h", "1w", "1m", "3m", "6m", "1y", "all"];
+    if (typeof type !== "string" || !validTypes.includes(type)) {
+      return res.status(400).json({
+        error: `Invalid type parameter. Valid options: ${validTypes.join(", ")}`,
+      });
+    }
+
+    const cacheKey = `crypto:insights:btc-dominance:${type}`;
+
+    log("info", `Crypto BTC dominance request for type: ${type} from ${req.ip}`);
+
+    if (CACHE_ENABLED) {
+      const cached = await cache.get<CoinStatsBtcDominanceResponse>(cacheKey);
+      if (cached) {
+        log("debug", `Cache hit for crypto BTC dominance: ${type}`);
+        return res.json(cached);
+      }
+      log("debug", `Cache miss for crypto BTC dominance: ${type}`);
+    }
+
+    try {
+      const result = await fetchFromCoinStats<CoinStatsBtcDominanceResponse>(
+        "/insights/btc-dominance",
+        { type }
+      );
+
+      log("debug", `Crypto BTC dominance: ${result.data?.length || 0} data points retrieved`);
+
+      if (CACHE_ENABLED) {
+        await cache.set<CoinStatsBtcDominanceResponse>(cacheKey, result, CACHE_TTL_SHORT);
+        log("debug", `Cached crypto BTC dominance ${type} with ${CACHE_TTL_SHORT}s TTL`);
+      }
+
+      res.json(result);
+    } catch (err) {
+      handleCryptoError(res, "btc-dominance", err);
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /crypto/insights/fear-greed:
+ *   get:
+ *     summary: Get Fear and Greed Index
+ *     description: Retrieve the current Crypto Fear & Greed Index with historical data
+ *     tags: [Crypto]
+ *     responses:
+ *       200:
+ *         description: Fear and Greed Index data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 name:
+ *                   type: string
+ *                 now:
+ *                   $ref: '#/components/schemas/CoinStatsFearGreedDataPoint'
+ *                 yesterday:
+ *                   $ref: '#/components/schemas/CoinStatsFearGreedDataPoint'
+ *                 lastWeek:
+ *                   $ref: '#/components/schemas/CoinStatsFearGreedDataPoint'
+ *             example:
+ *               name: "Fear and Greed Index"
+ *               now:
+ *                 value: 73
+ *                 value_classification: "Greed"
+ *                 timestamp: 1747052304
+ *                 update_time: "2025-05-12T12:08:10.020Z"
+ *               yesterday:
+ *                 value: 73
+ *                 value_classification: "Greed"
+ *                 timestamp: 1747052304
+ *               lastWeek:
+ *                 value: 73
+ *                 value_classification: "Greed"
+ *                 timestamp: 1747052304
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get(
+  "/insights/fear-greed",
+  async (
+    req: Request,
+    res: Response<CoinStatsFearGreedResponse | ErrorResponse>
+  ) => {
+    const cacheKey = "crypto:insights:fear-greed";
+
+    log("info", `Crypto Fear and Greed Index request from ${req.ip}`);
+
+    if (CACHE_ENABLED) {
+      const cached = await cache.get<CoinStatsFearGreedResponse>(cacheKey);
+      if (cached) {
+        log("debug", `Cache hit for crypto Fear and Greed Index`);
+        return res.json(cached);
+      }
+      log("debug", `Cache miss for crypto Fear and Greed Index`);
+    }
+
+    try {
+      const result = await fetchFromCoinStats<CoinStatsFearGreedResponse>(
+        "/insights/fear-and-greed"
+      );
+
+      log("debug", `Crypto Fear and Greed Index retrieved: ${result.name}`);
+
+      if (CACHE_ENABLED) {
+        await cache.set<CoinStatsFearGreedResponse>(cacheKey, result, CACHE_TTL_SHORT);
+        log("debug", `Cached crypto Fear and Greed Index with ${CACHE_TTL_SHORT}s TTL`);
+      }
+
+      res.json(result);
+    } catch (err) {
+      handleCryptoError(res, "fear-greed", err);
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /crypto/insights/rainbow-chart/{coinId}:
+ *   get:
+ *     summary: Get Rainbow Chart data
+ *     description: Retrieve Rainbow Chart data for Bitcoin or Ethereum
+ *     tags: [Crypto]
+ *     parameters:
+ *       - in: path
+ *         name: coinId
+ *         required: true
+ *         description: The coin identifier (bitcoin or ethereum)
+ *         schema:
+ *           type: string
+ *           enum: [bitcoin, ethereum]
+ *         example: "bitcoin"
+ *     responses:
+ *       200:
+ *         description: Rainbow Chart data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   price:
+ *                     type: string
+ *                   time:
+ *                     type: string
+ *             example:
+ *               - price: "0.9111"
+ *                 time: "2010-09-30"
+ *               - price: "1.2345"
+ *                 time: "2010-10-01"
+ *       400:
+ *         description: Invalid coin ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get(
+  "/insights/rainbow-chart/:coinId",
+  async (
+    req: Request<{ coinId: string }>,
+    res: Response<CoinStatsRainbowChartResponse | ErrorResponse>
+  ) => {
+    const { coinId } = req.params;
+
+    // Validate coinId parameter
+    const validCoinIds = ["bitcoin", "ethereum"];
+    if (!validCoinIds.includes(coinId)) {
+      return res.status(400).json({
+        error: `Invalid coinId parameter. Valid options: ${validCoinIds.join(", ")}`,
+      });
+    }
+
+    const cacheKey = `crypto:insights:rainbow-chart:${coinId}`;
+
+    log("info", `Crypto Rainbow Chart request for ${coinId} from ${req.ip}`);
+
+    if (CACHE_ENABLED) {
+      const cached = await cache.get<CoinStatsRainbowChartResponse>(cacheKey);
+      if (cached) {
+        log("debug", `Cache hit for crypto Rainbow Chart: ${coinId}`);
+        return res.json(cached);
+      }
+      log("debug", `Cache miss for crypto Rainbow Chart: ${coinId}`);
+    }
+
+    try {
+      const result = await fetchFromCoinStats<CoinStatsRainbowChartResponse>(
+        `/insights/rainbow-chart/${coinId}`
+      );
+
+      log("debug", `Crypto Rainbow Chart: ${result?.length || 0} data points retrieved for ${coinId}`);
+
+      if (CACHE_ENABLED) {
+        await cache.set<CoinStatsRainbowChartResponse>(cacheKey, result, CACHE_TTL_SHORT);
+        log("debug", `Cached crypto Rainbow Chart ${coinId} with ${CACHE_TTL_SHORT}s TTL`);
+      }
+
+      res.json(result);
+    } catch (err) {
+      handleCryptoError(res, "rainbow-chart", err);
+    }
+  }
+);
+
+export default router;
