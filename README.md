@@ -66,6 +66,11 @@ The server will be available at `http://localhost:3000` with API docs at `http:/
 
 - `GET /crypto/coins` - Cryptocurrency list with full filtering, sorting, and pagination
 - `GET /crypto/coins/:coinId` - Specific cryptocurrency data
+- `GET /crypto/market` - Global cryptocurrency market statistics
+- `GET /crypto/insights/btc-dominance` - Bitcoin dominance data over time
+- `GET /crypto/insights/fear-greed` - Crypto Fear & Greed Index
+- `GET /crypto/insights/rainbow-chart/:coinId` - Rainbow Chart technical analysis
+- `GET /crypto/news` - Cryptocurrency news by type with pagination
 
 ### Ticker Endpoints
 
