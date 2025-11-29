@@ -4,7 +4,7 @@
 version: "3.8"
 
 services:
-  yahoo-finance-server:
+  findata-hub:
     build: .
     ports:
       - "3000:3000"

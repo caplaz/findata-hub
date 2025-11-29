@@ -1,11 +1,10 @@
 # Findata Hub - Financial Data API Server
 
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/acerbetti/yahoo-finance-server/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/caplaz/findata-hub/blob/main/LICENSE)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen.svg)](https://nodejs.org/)
-[![CI](https://img.shields.io/github/actions/workflow/status/acerbetti/yahoo-finance-server/ci.yml)](https://github.com/acerbetti/yahoo-finance-server/actions)
-[![Docker Image](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com/r/acerbetti/yahoo-finance-server)
-[![GitHub Issues](https://img.shields.io/github/issues/acerbetti/yahoo-finance-server.svg)](https://github.com/acerbetti/yahoo-finance-server/issues)
-[![GitHub Stars](https://img.shields.io/github/stars/acerbetti/yahoo-finance-server.svg)](https://github.com/acerbetti/yahoo-finance-server/stargazers)
+[![CI](https://img.shields.io/github/actions/workflow/status/caplaz/findata-hub/ci.yml)](https://github.com/caplaz/findata-hub/actions)
+[![GitHub Issues](https://img.shields.io/github/issues/caplaz/findata-hub.svg)](https://github.com/caplaz/findata-hub/issues)
+[![GitHub Stars](https://img.shields.io/github/stars/caplaz/findata-hub.svg)](https://github.com/caplaz/findata-hub/stargazers)
 
 A comprehensive Node.js Express API server that serves financial data from Yahoo Finance and CoinStats. Features 26 REST endpoints for stocks, cryptocurrencies, market data, and more. Includes 5 MCP (Model Context Protocol) tools for LLM integration, supports multiple tickers in a single request with arrays as results and partial failure handling.
 
@@ -40,8 +39,8 @@ Special thanks to the authors and maintainers of the [yahoo-finance2](https://gi
 
 ```bash
 # Clone the repository
-git clone https://github.com/acerbetti/yahoo-finance-server.git
-cd yahoo-finance-server
+git clone https://github.com/caplaz/findata-hub.git
+cd findata-hub
 
 # Install dependencies
 npm install
@@ -107,8 +106,8 @@ For detailed API documentation, see the [interactive Swagger UI](http://localhos
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/acerbetti/yahoo-finance-server.git
-cd yahoo-finance-server
+git clone https://github.com/caplaz/findata-hub.git
+cd findata-hub
 ```
 
 2. Install dependencies:

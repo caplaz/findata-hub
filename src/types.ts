@@ -1,7 +1,7 @@
 /**
  * Centralized Type Definitions
  *
- * This file exports all type definitions used across the yahoo-finance-server project.
+ * This file exports all type definitions used across the findata-hub project.
  * It re-exports types from yahoo-finance2 library and defines custom types for
  * data structures not directly exported by the library.
  *

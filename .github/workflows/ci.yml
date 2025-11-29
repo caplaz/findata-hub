@@ -92,7 +92,7 @@ jobs:
           annotations: |
             manifest:org.opencontainers.image.title=Yahoo Finance Server
             manifest:org.opencontainers.image.description=A Node.js Express API server for Yahoo Finance data
-            manifest:org.opencontainers.image.vendor=acerbetti
+            manifest:org.opencontainers.image.vendor=caplaz
 
       - name: Inspect manifest
         run: |

@@ -27,7 +27,7 @@ const swaggerOptions = {
         "A comprehensive REST API for Yahoo Finance data with multi-ticker support, caching, and rate limiting",
       contact: {
         name: "API Support",
-        url: "https://github.com/acerbetti/yahoo-finance-server",
+        url: "https://github.com/caplaz/findata-hub",
       },
       license: {
         name: "Apache 2.0",
