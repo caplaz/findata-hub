@@ -10,7 +10,12 @@ import { Router, Request, Response } from "express";
 declare const fetch: typeof globalThis.fetch;
 
 import { cache, CACHE_ENABLED, CACHE_TTL_SHORT } from "../config/cache";
-import type { CoinStatsResponse, CoinStatsCoin, ErrorResponse } from "../types";
+import type {
+  CoinStatsResponse,
+  CoinStatsCoin,
+  CoinStatsMarketData,
+  ErrorResponse,
+} from "../types";
 import { log } from "../utils/logger";
 
 const router = Router();
@@ -475,6 +480,76 @@ router.get(
       res.json(coin);
     } catch (err) {
       handleCryptoError(res, "coin", err);
+    }
+  }
+);
+
+// ============================================================================
+// Market Data Endpoint
+// ============================================================================
+
+/**
+ * @swagger
+ * /crypto/market:
+ *   get:
+ *     summary: Get global cryptocurrency market data
+ *     description: Retrieve global cryptocurrency market statistics including total market cap, trading volume, and Bitcoin dominance
+ *     tags: [Crypto]
+ *     responses:
+ *       200:
+ *         description: Global cryptocurrency market data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CoinStatsMarketData'
+ *             example:
+ *               marketCap: 4026535943695
+ *               volume: 98765432101
+ *               btcDominance: 42.5
+ *               marketCapChange: -2.34
+ *               volumeChange: 5.67
+ *               btcDominanceChange: 0.89
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get(
+  "/market",
+  async (req: Request, res: Response<CoinStatsMarketData | ErrorResponse>) => {
+    const cacheKey = "crypto:market";
+
+    log("info", `Crypto market data request from ${req.ip}`);
+
+    if (CACHE_ENABLED) {
+      const cached = await cache.get<CoinStatsMarketData>(cacheKey);
+      if (cached) {
+        log("debug", `Cache hit for crypto market data`);
+        return res.json(cached);
+      }
+      log("debug", `Cache miss for crypto market data`);
+    }
+
+    try {
+      const result = await fetchFromCoinStats<CoinStatsMarketData>("/markets");
+
+      log(
+        "debug",
+        `Crypto market data retrieved: marketCap $${
+          result.marketCap?.toLocaleString() || "N/A"
+        }`
+      );
+
+      if (CACHE_ENABLED) {
+        await cache.set<CoinStatsMarketData>(cacheKey, result, CACHE_TTL_SHORT);
+        log("debug", `Cached crypto market data with ${CACHE_TTL_SHORT}s TTL`);
+      }
+
+      res.json(result);
+    } catch (err) {
+      handleCryptoError(res, "market", err);
     }
   }
 );

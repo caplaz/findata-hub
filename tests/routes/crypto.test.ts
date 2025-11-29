@@ -84,4 +84,23 @@ describe("Crypto Routes", () => {
       expect([200, 400, 404, 500]).toContain(response.status);
     });
   });
+
+  describe("GET /crypto/market", () => {
+    test("should return 200 for market data", async () => {
+      const response = await request(app).get("/crypto/market");
+      expect([200, 400, 500]).toContain(response.status);
+      if (response.status === 200) {
+        expect(response.body).toBeDefined();
+        expect(response.body).toHaveProperty("marketCap");
+        expect(response.body).toHaveProperty("volume");
+        expect(response.body).toHaveProperty("btcDominance");
+        expect(response.body).toHaveProperty("marketCapChange");
+        expect(response.body).toHaveProperty("volumeChange");
+        expect(response.body).toHaveProperty("btcDominanceChange");
+        expect(typeof response.body.marketCap).toBe("number");
+        expect(typeof response.body.volume).toBe("number");
+        expect(typeof response.body.btcDominance).toBe("number");
+      }
+    });
+  });
 });

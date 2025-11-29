@@ -210,6 +210,9 @@ COINSTATS_API_KEY=your-api-key-here
 **Cryptocurrency API Examples:**
 
 ```bash
+# Get global cryptocurrency market statistics
+curl "http://localhost:3000/crypto/market"
+
 # Get top 10 cryptocurrencies by market cap
 curl "http://localhost:3000/crypto/coins?limit=10&sortBy=marketCap&sortDir=desc"
 

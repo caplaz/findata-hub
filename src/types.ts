@@ -144,6 +144,18 @@ export interface CoinStatsResponse {
 }
 
 /**
+ * CoinStats market data structure for global cryptocurrency market statistics
+ */
+export interface CoinStatsMarketData {
+  marketCap: number;
+  volume: number;
+  btcDominance: number;
+  marketCapChange: number;
+  volumeChange: number;
+  btcDominanceChange: number;
+}
+
+/**
  * Fear & Greed Index data structure
  */
 export interface FearGreedIndex {

@@ -154,6 +154,7 @@ if (require.main === module) {
     log("info", `   GET /health - Health check`);
     log("info", `   GET /crypto/coins - Cryptocurrency data`);
     log("info", `   GET /crypto/coins/:coinId - Specific cryptocurrency`);
+    log("info", `   GET /crypto/market - Global crypto market statistics`);
     log("info", `   GET /quote/:symbols - Stock quotes (comma-separated)`);
     log("info", `   GET /history/:symbols - Historical data`);
     log("info", `   GET /search/:query - Search symbols and news`);
